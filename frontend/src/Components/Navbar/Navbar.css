@@ -1,6 +1,39 @@
 nav {
-    width: 100vw;
-    height: 10vh;
-    background-color: black;
-    
+  width: 100vw;
+  height: 10vh;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgb(0, 0, 0);
+  color: rgb(255, 255, 255);
+  padding: 0 2rem;
+  border: 1px solid black;
+}
+
+h1 {
+    text-decoration: none;
+   color: rgb(255, 255, 255);
+   text-decoration: none;
+   font-size: 3rem;
+}
+
+nav ul {
+  display: flex;
+  gap: 1rem;
+  color: black;
+}
+
+
+nav ul li {
+  list-style: none;
+  text-decoration: none;
+  font-size: 1.5rem;
+}
+
+a {
+    text-decoration: none;
+    color: rgb(255, 255, 255);
 }
