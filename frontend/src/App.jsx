@@ -7,8 +7,9 @@ import News from "./Pages/News/News.jsx";
 import Pricing from "./Pages/Pricing/Pricing.jsx";
 import Profile from "./Pages/Profile/Profile.jsx";
 //IMPORTED COMPONENTS
-import Footer from './Components/Footer/Footer.jsx';
-import Navbar from './Components/Navbar/Navbar.jsx';
+import Footer from "./Components/Footer/Footer.jsx";
+import Navbar from "./Components/Navbar/Navbar.jsx";
+import "../src/Global.css";
 function App() {
   return (
     <Router>
