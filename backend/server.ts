@@ -1,12 +1,14 @@
-const express = require("express");
-const helmet = require("helmet");
-const cors = require("cors");
-const session = require("express-session");
-const cookieParser = require("cookie-parser");
-require("dotenv").config();
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import dotenv from "dotenv";
+import express, { NextFunction, Request, Response } from "express";
+import session from "express-session";
+import helmet from "helmet";
+
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 // Middleware
 app.use(helmet());
@@ -35,12 +37,12 @@ app.use(
 );
 
 // Routes
-app.get("/", (req, res) => {
+app.get("/", (_req: Request, res: Response) => {
   res.json({ message: "Backend server is running!" });
 });
 
 // Error handling middleware
-app.use((err, req, res, next) => {
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err.stack);
   res.status(500).json({ message: "Something went wrong!" });
 });

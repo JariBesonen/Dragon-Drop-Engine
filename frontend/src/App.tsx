@@ -1,14 +1,14 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 //IMPORTED PAGES
-import Home from "./Pages/Home/Home.jsx";
-import Create from "./Pages/Create/Create.jsx";
-import Learn from "./Pages/Learn/Learn.jsx";
-import News from "./Pages/News/News.jsx";
-import Pricing from "./Pages/Pricing/Pricing.jsx";
-import Profile from "./Pages/Profile/Profile.jsx";
+import Home from "./Pages/Home/Home";
+import Create from "./Pages/Create/Create";
+import Learn from "./Pages/Learn/Learn";
+import News from "./Pages/News/News";
+import Pricing from "./Pages/Pricing/Pricing";
+import Profile from "./Pages/Profile/Profile";
 //IMPORTED COMPONENTS
-import Footer from "./Components/Footer/Footer.jsx";
-import Navbar from "./Components/Navbar/Navbar.jsx";
+import Footer from "./Components/Footer/Footer";
+import Navbar from "./Components/Navbar/Navbar";
 import "../src/Global.css";
 function App() {
   return (
