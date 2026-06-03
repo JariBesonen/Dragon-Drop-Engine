@@ -17,6 +17,10 @@ body {
   padding-left: var(--side-nav-width);
 }
 
+.auth-route-content {
+  padding-left: 0;
+}
+
 @media (max-width: 980px) {
   .app-content {
     padding-left: 0;

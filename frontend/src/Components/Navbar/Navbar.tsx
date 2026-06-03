@@ -5,12 +5,8 @@ import "./Navbar.css";
 
 function Navbar() {
   const navigate = useNavigate();
-  const { currentUser, login, logout, register } = useAuth();
+  const { currentUser, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [identity, setIdentity] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [authMessage, setAuthMessage] = useState<string>("");
 
   function handleSearch(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -22,39 +18,8 @@ function Navbar() {
     navigate(`/explore?q=${encodeURIComponent(query)}`);
   }
 
-  async function handleLogin(event: FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
-    try {
-      await login(identity, password);
-      setAuthMessage("Logged in.");
-      setPassword("");
-    } catch (caughtError) {
-      setAuthMessage(
-        caughtError instanceof Error ? caughtError.message : "Unable to login.",
-      );
-    }
-  }
-
-  async function handleRegister(
-    event: FormEvent<HTMLFormElement>,
-  ): Promise<void> {
-    event.preventDefault();
-    try {
-      await register(identity, email, password);
-      setAuthMessage("Account created.");
-      setPassword("");
-    } catch (caughtError) {
-      setAuthMessage(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Unable to register.",
-      );
-    }
-  }
-
   async function handleLogout(): Promise<void> {
     await logout();
-    setAuthMessage("Logged out.");
   }
 
   return (
@@ -94,46 +59,12 @@ function Navbar() {
             </button>
           </>
         ) : (
-          <>
-            <form
-              onSubmit={(event) => {
-                void handleLogin(event);
-              }}
-            >
-              <input
-                placeholder="username or email"
-                value={identity}
-                onChange={(event) => {
-                  setIdentity(event.target.value);
-                }}
-              />
-              <input
-                type="password"
-                placeholder="password"
-                value={password}
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                }}
-              />
-              <button type="submit">login</button>
-            </form>
-            <form
-              onSubmit={(event) => {
-                void handleRegister(event);
-              }}
-            >
-              <input
-                placeholder="email"
-                value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value);
-                }}
-              />
-              <button type="submit">register</button>
-            </form>
-          </>
+          <div className="auth-links">
+            <Link className="login-link" to="/login">
+              login
+            </Link>
+          </div>
         )}
-        {authMessage ? <small>{authMessage}</small> : null}
       </div>
     </nav>
   );
