@@ -15,10 +15,16 @@ export async function register(req: Request, res: Response): Promise<Response> {
     password?: string;
   };
 
-  if (!username || !email || !password || password.length < 6) {
+  if (!username || !email || !password) {
     return res
       .status(400)
       .json({ message: "Username, email, and password are required." });
+  }
+
+  if (password.length < 6) {
+    return res
+      .status(400)
+      .json({ message: "Password must be at least 6 characters long." });
   }
 
   const existingUser = await findUserByUsernameOrEmail(username, email);
@@ -70,7 +76,7 @@ export function logout(req: Request, res: Response): void {
 
 export async function me(req: Request, res: Response): Promise<Response> {
   if (!req.session.userId) {
-    return res.status(401).json({ message: "Not authenticated." });
+    return res.status(200).json({ user: null });
   }
 
   const user = await findUserById(req.session.userId);

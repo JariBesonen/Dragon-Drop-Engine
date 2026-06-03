@@ -19,13 +19,26 @@ export default function Register() {
     event.preventDefault();
     setErrorMessage("");
 
+    const trimmedUsername = username.trim();
+    const trimmedEmail = email.trim();
+
+    if (!trimmedUsername || !trimmedEmail) {
+      setErrorMessage("Username and email are required.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setErrorMessage("Password must be at least 6 characters long.");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setErrorMessage("Passwords do not match.");
       return;
     }
 
     try {
-      await register(username, email, password);
+      await register(trimmedUsername, trimmedEmail, password);
       navigate("/");
     } catch (caughtError) {
       setErrorMessage(
@@ -55,6 +68,7 @@ export default function Register() {
             type="text"
             autoComplete="username"
             value={username}
+            minLength={3}
             onChange={(event) => {
               setUsername(event.target.value);
             }}
@@ -79,6 +93,7 @@ export default function Register() {
             type="password"
             autoComplete="new-password"
             value={password}
+            minLength={6}
             onChange={(event) => {
               setPassword(event.target.value);
             }}
@@ -91,6 +106,7 @@ export default function Register() {
             type="password"
             autoComplete="new-password"
             value={confirmPassword}
+            minLength={6}
             onChange={(event) => {
               setConfirmPassword(event.target.value);
             }}
