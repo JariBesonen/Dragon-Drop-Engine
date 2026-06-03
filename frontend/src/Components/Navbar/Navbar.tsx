@@ -67,16 +67,10 @@ function Navbar() {
           <Link to="/">home</Link>
         </li>
         <li>
-          <Link to="/explore">explore</Link>
-        </li>
-        <li>
           <Link to="/create">create post</Link>
         </li>
         <li>
           <Link to="/profile">profile</Link>
-        </li>
-        <li>
-          <Link to="/settings">settings</Link>
         </li>
       </ul>
       <form className="nav-search" onSubmit={handleSearch}>

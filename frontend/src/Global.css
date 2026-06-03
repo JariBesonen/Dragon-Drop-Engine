@@ -4,6 +4,21 @@
   box-sizing: border-box;
 }
 
+:root {
+  --top-nav-height: 10vh;
+  --side-nav-width: 240px;
+}
+
 body {
   overflow-x: hidden;
+}
+
+.app-content {
+  padding-left: var(--side-nav-width);
+}
+
+@media (max-width: 980px) {
+  .app-content {
+    padding-left: 0;
+  }
 }
