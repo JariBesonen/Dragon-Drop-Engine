@@ -4,6 +4,10 @@ import dotenv from "dotenv";
 import express, { NextFunction, Request, Response } from "express";
 import session from "express-session";
 import helmet from "helmet";
+import { initDatabase } from "./src/db/init";
+import authRouter from "./src/routes/auth";
+import postsRouter from "./src/routes/posts";
+import profileRouter from "./src/routes/profile";
 
 dotenv.config();
 
@@ -14,7 +18,7 @@ const PORT = Number(process.env.PORT) || 5000;
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
     credentials: true,
   }),
 );
@@ -25,7 +29,7 @@ app.use(express.urlencoded({ extended: true }));
 // Session configuration
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "your-secret-key",
+    secret: process.env.SESSION_SECRET || "hive-dev-session-secret",
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -38,8 +42,12 @@ app.use(
 
 // Routes
 app.get("/", (_req: Request, res: Response) => {
-  res.json({ message: "Backend server is running!" });
+  res.json({ message: "Hive API is running." });
 });
+
+app.use("/api/auth", authRouter);
+app.use("/api/posts", postsRouter);
+app.use("/api/profile", profileRouter);
 
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
@@ -47,6 +55,14 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   res.status(500).json({ message: "Something went wrong!" });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+async function startServer(): Promise<void> {
+  await initDatabase();
+  app.listen(PORT, () => {
+    console.log(`Hive backend is running on port ${PORT}`);
+  });
+}
+
+startServer().catch((error: Error) => {
+  console.error("Failed to start backend", error);
+  process.exit(1);
 });
