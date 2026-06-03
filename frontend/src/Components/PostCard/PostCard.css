@@ -1,0 +1,30 @@
+.post-card {
+  border: 1px solid #d5d9de;
+  border-radius: 12px;
+  padding: 1rem;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.post-card-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #5a6472;
+}
+
+.post-card h3 {
+  font-size: 1.15rem;
+  color: #162133;
+}
+
+.post-card p {
+  color: #2c3648;
+  line-height: 1.45;
+}
+
+.post-card small {
+  color: #6d7786;
+}

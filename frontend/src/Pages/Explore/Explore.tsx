@@ -1,38 +1,38 @@
-import "./Home.css";
 import { useEffect, useState } from "react";
 import PostCard from "../../Components/PostCard/PostCard";
 import { api, type ApiPost } from "../../lib/api";
+import "./Explore.css";
 
-function Home() {
+export default function Explore() {
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [error, setError] = useState<string>("");
 
   useEffect(() => {
-    async function loadHome(): Promise<void> {
+    async function loadExplore(): Promise<void> {
       try {
-        const response = await api.getHomePosts();
+        const response = await api.getExplorePosts();
         setPosts(response.posts);
       } catch (caughtError) {
         setError(
           caughtError instanceof Error
             ? caughtError.message
-            : "Unable to load home feed.",
+            : "Unable to load posts.",
         );
       }
     }
 
-    void loadHome();
+    void loadExplore();
   }, []);
 
   return (
-    <main className="home-page">
-      <section className="home-shell">
-        <h2>Home Feed</h2>
-        <p className="home-description">
-          Your personalized Hive timeline. Follow creators to shape this feed.
+    <main className="feed-page">
+      <section className="feed-shell">
+        <h2>Explore</h2>
+        <p className="feed-description">
+          Discover the latest conversations across Hive.
         </p>
-        {error ? <p className="home-error">{error}</p> : null}
-        <div className="home-list">
+        {error ? <p className="feed-error">{error}</p> : null}
+        <div className="feed-list">
           {posts.map((post: ApiPost) => (
             <PostCard key={post.id} post={post} />
           ))}
@@ -41,5 +41,3 @@ function Home() {
     </main>
   );
 }
-
-export default Home;

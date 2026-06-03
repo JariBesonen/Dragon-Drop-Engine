@@ -1,39 +1,117 @@
 nav {
   width: 100vw;
-  height: 10vh;
-  position: absolute;
+  min-height: 10vh;
+  position: fixed;
   top: 0;
   left: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: rgb(0, 0, 0);
-  color: rgb(255, 255, 255);
+  background-color: #ffffff;
+  color: #18243b;
   padding: 0 2rem;
-  border: 1px solid black;
+  border-bottom: 1px solid #dce2ea;
+  z-index: 20;
+}
+
+nav > a {
+  flex-shrink: 0;
 }
 
 h1 {
-    text-decoration: none;
-   color: rgb(255, 255, 255);
-   text-decoration: none;
-   font-size: 3rem;
+  color: #ff5b00;
+  text-decoration: none;
+  font-size: 2.1rem;
 }
 
 nav ul {
   display: flex;
   gap: 1rem;
-  color: black;
+  color: #22304a;
+  flex-wrap: wrap;
 }
-
 
 nav ul li {
   list-style: none;
   text-decoration: none;
-  font-size: 1.5rem;
+  font-size: 1rem;
 }
 
 a {
-    text-decoration: none;
-    color: rgb(255, 255, 255);
+  text-decoration: none;
+  color: #22304a;
+}
+
+.nav-search {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0.75rem;
+}
+
+.nav-search input {
+  width: min(320px, 28vw);
+  border: 1px solid #cfd6e2;
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  font: inherit;
+}
+
+.nav-search button {
+  border: 1px solid #ff5b00;
+  border-radius: 999px;
+  padding: 0.38rem 0.7rem;
+  background: #fff4ed;
+  color: #b43e00;
+  cursor: pointer;
+}
+
+.auth-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #243550;
+}
+
+.auth-controls form {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.auth-controls input {
+  border: 1px solid #cfd6e2;
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+  max-width: 150px;
+}
+
+.auth-controls button {
+  border: none;
+  border-radius: 6px;
+  padding: 0.35rem 0.55rem;
+  background: #ff5b00;
+  color: white;
+  cursor: pointer;
+}
+
+.auth-controls small {
+  color: #51607c;
+}
+
+@media (max-width: 1150px) {
+  nav {
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    padding: 0.8rem 1rem;
+  }
+
+  .nav-search {
+    order: 4;
+    width: 100%;
+    margin: 0;
+  }
+
+  .nav-search input {
+    width: 100%;
+  }
 }
