@@ -4,7 +4,8 @@ nav {
   position: fixed;
   top: 0;
   left: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(260px, 520px) auto;
   align-items: center;
   justify-content: space-between;
   background-color: #ffffff;
@@ -12,9 +13,10 @@ nav {
   padding: 0 2rem;
   border-bottom: 1px solid #dce2ea;
   z-index: 20;
+  gap: 1rem;
 }
 
-nav > a {
+.brand-link {
   flex-shrink: 0;
 }
 
@@ -46,20 +48,20 @@ a {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  margin: 0 0.75rem;
+  width: 100%;
 }
 
 .nav-search input {
-  width: min(320px, 28vw);
+  width: 100%;
   border: 1px solid #cfd6e2;
-  border-radius: 999px;
+  border-radius: 0;
   padding: 0.45rem 0.75rem;
   font: inherit;
 }
 
 .nav-search button {
   border: 1px solid #ff5b00;
-  border-radius: 999px;
+  border-radius: 0;
   padding: 0.38rem 0.7rem;
   background: #fff4ed;
   color: #b43e00;
@@ -73,6 +75,13 @@ a {
   color: #243550;
 }
 
+.nav-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
 .auth-links {
   display: flex;
   flex-direction: column;
@@ -80,15 +89,10 @@ a {
   gap: 0.3rem;
 }
 
-.register-link {
-  color: #3f5377;
-  font-size: 0.85rem;
-}
-
 .login-link,
 .auth-controls button {
   border: none;
-  border-radius: 6px;
+  border-radius: 0;
   padding: 0.35rem 0.55rem;
   background: #ff5b00;
   color: white;
@@ -106,12 +110,16 @@ a {
 @media (max-width: 1150px) {
   nav {
     gap: 0.6rem;
-    flex-wrap: wrap;
+    grid-template-columns: 1fr;
     padding: 0.8rem 1rem;
   }
 
+  .nav-right {
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
   .nav-search {
-    order: 4;
     width: 100%;
     margin: 0;
   }

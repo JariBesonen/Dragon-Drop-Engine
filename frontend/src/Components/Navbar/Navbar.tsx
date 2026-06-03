@@ -24,20 +24,9 @@ function Navbar() {
 
   return (
     <nav>
-      <Link to="/">
+      <Link className="brand-link" to="/">
         <h1>Hive</h1>
       </Link>
-      <ul>
-        <li>
-          <Link to="/">home</Link>
-        </li>
-        <li>
-          <Link to="/create">create post</Link>
-        </li>
-        <li>
-          <Link to="/profile">profile</Link>
-        </li>
-      </ul>
       <form className="nav-search" onSubmit={handleSearch}>
         <input
           type="search"
@@ -50,21 +39,34 @@ function Navbar() {
         />
         <button type="submit">search</button>
       </form>
-      <div className="auth-controls">
-        {currentUser ? (
-          <>
-            <span>@{currentUser.username}</span>
-            <button type="button" onClick={handleLogout}>
-              logout
-            </button>
-          </>
-        ) : (
-          <div className="auth-links">
-            <Link className="login-link" to="/login">
-              login
-            </Link>
-          </div>
-        )}
+      <div className="nav-right">
+        <ul>
+          <li>
+            <Link to="/">home</Link>
+          </li>
+          <li>
+            <Link to="/create">create post</Link>
+          </li>
+          <li>
+            <Link to="/profile">profile</Link>
+          </li>
+        </ul>
+        <div className="auth-controls">
+          {currentUser ? (
+            <>
+              <span>@{currentUser.username}</span>
+              <button type="button" onClick={handleLogout}>
+                logout
+              </button>
+            </>
+          ) : (
+            <div className="auth-links">
+              <Link className="login-link" to="/login">
+                login
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
     </nav>
   );
