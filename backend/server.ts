@@ -1,6 +1,6 @@
+import "dotenv/config";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import dotenv from "dotenv";
 import express, { NextFunction, Request, Response } from "express";
 import session from "express-session";
 import helmet from "helmet";
@@ -8,8 +8,6 @@ import { initDatabase } from "./src/db/init";
 import authRouter from "./src/routes/auth";
 import postsRouter from "./src/routes/posts";
 import profileRouter from "./src/routes/profile";
-
-dotenv.config();
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
