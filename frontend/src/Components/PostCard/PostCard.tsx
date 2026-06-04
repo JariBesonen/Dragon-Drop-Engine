@@ -34,7 +34,8 @@ export default function PostCard({ post }: { post: ApiPost }) {
   const [deleteMessage, setDeleteMessage] = useState<string>("");
 
   const imageSrc = resolveMediaSrc(post.imageUrl);
-  const shouldRenderBody = post.content.trim().length > 0 && post.content !== post.title;
+  const shouldRenderBody =
+    post.content.trim().length > 0 && post.content !== post.title;
 
   async function handleDelete(): Promise<void> {
     const confirmed = window.confirm("Delete this post?");
@@ -54,7 +55,9 @@ export default function PostCard({ post }: { post: ApiPost }) {
       }
 
       setDeleteMessage(
-        caughtError instanceof Error ? caughtError.message : "Unable to delete post.",
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to delete post.",
       );
     } finally {
       setIsDeleting(false);
@@ -91,7 +94,9 @@ export default function PostCard({ post }: { post: ApiPost }) {
       ) : null}
       {shouldRenderBody ? <p>{post.content}</p> : null}
       <small>{formatDate(post.createdAt)}</small>
-      {deleteMessage ? <p className="post-card-delete-message">{deleteMessage}</p> : null}
+      {deleteMessage ? (
+        <p className="post-card-delete-message">{deleteMessage}</p>
+      ) : null}
     </article>
   );
 }

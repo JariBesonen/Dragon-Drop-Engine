@@ -10,6 +10,7 @@ import authRouter from "./src/routes/auth";
 import hivesRouter from "./src/routes/hives";
 import postsRouter from "./src/routes/posts";
 import profileRouter from "./src/routes/profile";
+import searchRouter from "./src/routes/search";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -54,6 +55,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/hives", hivesRouter);
 app.use("/api/posts", postsRouter);
 app.use("/api/profile", profileRouter);
+app.use("/api/search", searchRouter);
 
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {

@@ -1,0 +1,73 @@
+.search-page {
+  margin-top: 10vh;
+  min-height: 90vh;
+  background: #f3f5f8;
+  padding: 1.2rem;
+}
+
+.search-shell {
+  width: min(1000px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.search-shell h2 {
+  color: #14213b;
+}
+
+.search-query {
+  color: #42506a;
+}
+
+.search-state {
+  color: #60708c;
+}
+
+.search-error {
+  color: #a62020;
+}
+
+.search-empty {
+  color: #1f2f4a;
+  font-weight: 600;
+}
+
+.search-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.search-section h3 {
+  color: #1d2a42;
+}
+
+.search-hive-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.7rem;
+}
+
+.search-hive-card {
+  border: 1px solid #d8deea;
+  background: #ffffff;
+  padding: 0.85rem;
+  color: #20334f;
+  text-decoration: none;
+}
+
+.search-hive-card h4 {
+  margin-bottom: 0.3rem;
+}
+
+.search-hive-card p {
+  color: #53637e;
+}
+
+.search-post-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}

@@ -30,6 +30,11 @@ export interface ApiHive {
   createdAt: string;
 }
 
+export interface ApiSearchResult {
+  searches: string[];
+  hives: ApiHive[];
+}
+
 export class ApiError extends Error {
   status: number;
 
@@ -87,12 +92,15 @@ export const api = {
     }),
   getExplorePosts: () => request<{ posts: ApiPost[] }>("/api/posts/explore"),
   getHomePosts: () => request<{ posts: ApiPost[] }>("/api/posts/home"),
+  search: (query: string) =>
+    request<ApiSearchResult>(`/api/search?q=${encodeURIComponent(query)}`),
   createPost: (body: { title: string; content: string; community: string }) =>
     request<{ post: ApiPost }>("/api/posts", {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  getHivePosts: (id: number) => request<{ posts: ApiPost[] }>(`/api/hives/${id}/posts`),
+  getHivePosts: (id: number) =>
+    request<{ posts: ApiPost[] }>(`/api/hives/${id}/posts`),
   createHivePost: (id: number, formData: FormData) =>
     request<{ post: ApiPost }>(`/api/hives/${id}/posts`, {
       method: "POST",

@@ -10,6 +10,7 @@ import Create from "./Pages/Create/module";
 import Explore from "./Pages/Explore/Explore";
 import HiveDetail from "./Pages/HiveDetail/HiveDetail";
 import Profile from "./Pages/Profile/Profile";
+import Search from "./Pages/Search/Search";
 import Settings from "./Pages/Settings/Settings";
 import Login from "./Pages/Login/Login";
 import Register from "./Pages/Register/Register";
@@ -32,6 +33,7 @@ function AppLayout() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/explore" element={<Explore />} />
+          <Route path="/search" element={<Search />} />
           <Route path="/hive/:id" element={<HiveDetail />} />
           <Route path="/create" element={<Create />} />
           <Route path="/profile" element={<Profile />} />

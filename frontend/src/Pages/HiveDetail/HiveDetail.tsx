@@ -217,7 +217,9 @@ export default function HiveDetail() {
         </header>
 
         {!currentUser ? (
-          <p className="hive-auth-note">Log in to create a post in this hive.</p>
+          <p className="hive-auth-note">
+            Log in to create a post in this hive.
+          </p>
         ) : null}
 
         {hive.tags.length > 0 ? (
@@ -249,10 +251,19 @@ export default function HiveDetail() {
 
       {isPostModalOpen ? (
         <div className="hive-modal-backdrop" role="presentation">
-          <div className="hive-modal" role="dialog" aria-modal="true" aria-labelledby="create-post-title">
+          <div
+            className="hive-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-post-title"
+          >
             <div className="hive-modal-header">
               <h3 id="create-post-title">Create Post</h3>
-              <button type="button" className="hive-modal-close" onClick={closePostModal}>
+              <button
+                type="button"
+                className="hive-modal-close"
+                onClick={closePostModal}
+              >
                 ×
               </button>
             </div>
@@ -309,7 +320,11 @@ export default function HiveDetail() {
 
               {postImagePreview ? (
                 <>
-                  <img className="hive-modal-preview" src={postImagePreview} alt="Post preview" />
+                  <img
+                    className="hive-modal-preview"
+                    src={postImagePreview}
+                    alt="Post preview"
+                  />
                   <button
                     type="button"
                     className="hive-modal-remove-image"
@@ -321,16 +336,26 @@ export default function HiveDetail() {
               ) : null}
 
               <div className="hive-modal-actions">
-                <button type="button" className="hive-modal-secondary" onClick={closePostModal}>
+                <button
+                  type="button"
+                  className="hive-modal-secondary"
+                  onClick={closePostModal}
+                >
                   Cancel
                 </button>
-                <button type="submit" className="hive-modal-primary" disabled={isSubmittingPost}>
+                <button
+                  type="submit"
+                  className="hive-modal-primary"
+                  disabled={isSubmittingPost}
+                >
                   {isSubmittingPost ? "Posting..." : "Post to Hive"}
                 </button>
               </div>
             </form>
 
-            {postMessage ? <p className="hive-modal-message">{postMessage}</p> : null}
+            {postMessage ? (
+              <p className="hive-modal-message">{postMessage}</p>
+            ) : null}
           </div>
         </div>
       ) : null}

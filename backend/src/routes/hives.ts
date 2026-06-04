@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { create, getById, getMine } from "../controllers/hivesController";
-import { create as createPost, hivePosts } from "../controllers/postsController";
+import {
+  create as createPost,
+  hivePosts,
+} from "../controllers/postsController";
 import { uploadHiveBanner } from "../middleware/upload";
 import { uploadHivePostImage } from "../middleware/upload";
 

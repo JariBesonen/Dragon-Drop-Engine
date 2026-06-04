@@ -26,6 +26,15 @@
   color: #a62020;
 }
 
+.feed-query {
+  color: #33415b;
+  font-weight: 600;
+}
+
+.feed-empty {
+  color: #60708c;
+}
+
 .feed-list {
   display: flex;
   flex-direction: column;

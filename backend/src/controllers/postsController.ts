@@ -68,7 +68,10 @@ export async function create(req: Request, res: Response): Promise<Response> {
   return res.status(201).json({ post: mapPost(post) });
 }
 
-export async function hivePosts(req: Request, res: Response): Promise<Response> {
+export async function hivePosts(
+  req: Request,
+  res: Response,
+): Promise<Response> {
   const hiveId = Number(req.params.id);
   if (!Number.isInteger(hiveId) || hiveId <= 0) {
     return res.status(400).json({ message: "Invalid hive id." });
@@ -99,7 +102,9 @@ export async function remove(req: Request, res: Response): Promise<Response> {
   }
 
   if (post.user_id !== req.session.userId) {
-    return res.status(403).json({ message: "You can only delete your own posts." });
+    return res
+      .status(403)
+      .json({ message: "You can only delete your own posts." });
   }
 
   const deletedPost = await deletePostByOwner(postId, req.session.userId);
@@ -108,7 +113,10 @@ export async function remove(req: Request, res: Response): Promise<Response> {
   }
 
   if (deletedPost.image_url) {
-    const absoluteImagePath = path.resolve(process.cwd(), deletedPost.image_url.replace(/^\//, ""));
+    const absoluteImagePath = path.resolve(
+      process.cwd(),
+      deletedPost.image_url.replace(/^\//, ""),
+    );
     fs.promises.unlink(absoluteImagePath).catch(() => undefined);
   }
 
