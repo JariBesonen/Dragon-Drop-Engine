@@ -4,8 +4,8 @@
   left: 0;
   bottom: 0;
   width: var(--side-nav-width);
-  border-right: 1px solid #dce2ea;
-  background: #f9fbff;
+  border-right: 1px solid var(--surface-border);
+  background: var(--surface-subtle-bg);
   padding: 1rem 0.85rem;
   display: flex;
   flex-direction: column;
@@ -24,13 +24,13 @@
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #52607b;
+  color: var(--muted-text);
 }
 
 .side-nav a {
-  color: #233450;
-  background: #ffffff;
-  border: 1px solid #dae0ea;
+  color: var(--body-text);
+  background: var(--surface-bg);
+  border: 1px solid var(--surface-border);
   border-radius: 8px;
   padding: 0.45rem 0.6rem;
 }
@@ -42,10 +42,10 @@
 }
 
 .side-placeholder {
-  border: 1px dashed #c8d1df;
+  border: 1px dashed var(--surface-border);
   border-radius: 10px;
   padding: 0.65rem;
-  color: #60708c;
+  color: var(--muted-text);
   font-size: 0.92rem;
 }
 

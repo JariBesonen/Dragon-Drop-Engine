@@ -9,9 +9,31 @@ export async function initDatabase(): Promise<void> {
       password_hash TEXT NOT NULL,
       display_name VARCHAR(60) NOT NULL,
       bio TEXT NOT NULL DEFAULT '',
+      theme_preference VARCHAR(10) NOT NULL DEFAULT 'light',
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     );`,
+  );
+
+  await query(
+    `ALTER TABLE users
+     ADD COLUMN IF NOT EXISTS theme_preference VARCHAR(10) NOT NULL DEFAULT 'light';`,
+  );
+
+  await query(
+    `DO $$
+     BEGIN
+       IF NOT EXISTS (
+         SELECT 1
+         FROM pg_constraint
+         WHERE conname = 'users_theme_preference_check'
+       ) THEN
+         ALTER TABLE users
+           ADD CONSTRAINT users_theme_preference_check
+           CHECK (theme_preference IN ('light', 'dark'));
+       END IF;
+     END
+     $$;`,
   );
 
   await query(

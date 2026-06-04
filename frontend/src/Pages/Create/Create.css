@@ -1,26 +1,26 @@
 .create-post-page {
   margin-top: 10vh;
   min-height: 90vh;
-  background: #f3f5f8;
+  background: var(--page-bg);
   padding: 1.2rem;
 }
 
 .create-post-shell {
   width: min(860px, 100%);
   margin: 0 auto;
-  background: white;
-  border: 1px solid #d5d9de;
+  background: var(--surface-bg);
+  border: 1px solid var(--surface-border);
   border-radius: 12px;
   padding: 1rem;
 }
 
 .create-post-shell h2 {
-  color: #14213b;
+  color: var(--heading-color);
   margin-bottom: 0.8rem;
 }
 
 .create-note {
-  color: #7a4258;
+  color: var(--muted-text);
   margin-bottom: 0.6rem;
 }
 
@@ -32,22 +32,24 @@
 
 .create-post-form input,
 .create-post-form textarea {
-  border: 1px solid #ccd3df;
+  border: 1px solid var(--surface-border);
   border-radius: 8px;
   padding: 0.55rem 0.65rem;
   font: inherit;
+  background: var(--input-bg);
+  color: var(--body-text);
 }
 
 .create-post-form input[type="file"] {
   padding: 0.45rem;
-  background: #f8fafd;
+  background: var(--surface-subtle-bg);
 }
 
 .create-banner-preview {
   width: 100%;
   max-height: 220px;
   object-fit: cover;
-  border: 1px solid #d7dde7;
+  border: 1px solid var(--surface-border);
   border-radius: 8px;
 }
 
@@ -56,7 +58,7 @@
   margin-top: -0.25rem;
   background: transparent;
   color: #8d2a2a;
-  border: 1px solid #d7dde7;
+  border: 1px solid var(--surface-border);
   border-radius: 8px;
   padding: 0.4rem 0.7rem;
   cursor: pointer;
@@ -84,5 +86,5 @@
 
 .create-message {
   margin-top: 0.8rem;
-  color: #32415c;
+  color: var(--muted-text);
 }

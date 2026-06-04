@@ -4,6 +4,7 @@ export interface ApiUser {
   email: string;
   displayName: string;
   bio: string;
+  themePreference: "light" | "dark";
   createdAt: string;
 }
 
@@ -139,9 +140,19 @@ export const api = {
     }),
   getMyProfile: () =>
     request<{ user: ApiUser; posts: ApiPost[] }>("/api/profile/me"),
-  updateSettings: (body: { displayName?: string; bio?: string }) =>
+  updateSettings: (body: {
+    username?: string;
+    displayName?: string;
+    bio?: string;
+    themePreference?: "light" | "dark";
+  }) =>
     request<{ user: ApiUser }>("/api/profile/settings", {
       method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  deleteAccount: (body: { confirmation: string }) =>
+    request<{ message: string }>("/api/auth/account", {
+      method: "DELETE",
       body: JSON.stringify(body),
     }),
 };

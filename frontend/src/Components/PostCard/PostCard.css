@@ -1,8 +1,8 @@
 .post-card {
-  border: 1px solid #d5d9de;
+  border: 1px solid var(--surface-border);
   border-radius: 12px;
   padding: 1rem;
-  background: #ffffff;
+  background: var(--surface-bg);
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -13,7 +13,7 @@
   justify-content: space-between;
   align-items: flex-start;
   font-size: 0.85rem;
-  color: #5a6472;
+  color: var(--muted-text);
 }
 
 .post-card-meta-actions {
@@ -26,7 +26,7 @@
 .post-card-author {
   text-align: right;
   font-weight: 600;
-  color: #31415d;
+  color: var(--body-text);
 }
 
 .post-card-delete-button {
@@ -45,7 +45,7 @@
 
 .post-card h3 {
   font-size: 1.15rem;
-  color: #162133;
+  color: var(--heading-color);
 }
 
 .post-card-image {
@@ -53,11 +53,11 @@
   max-height: 420px;
   object-fit: cover;
   border-radius: 10px;
-  border: 1px solid #d9dfe8;
+  border: 1px solid var(--surface-border);
 }
 
 .post-card p {
-  color: #2c3648;
+  color: var(--body-text);
   line-height: 1.45;
 }
 
@@ -68,9 +68,9 @@
 }
 
 .post-card-vote-button {
-  border: 1px solid #d5d9de;
-  background: #f7f9fc;
-  color: #22304a;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-subtle-bg);
+  color: var(--body-text);
   padding: 0.35rem 0.7rem;
   display: inline-flex;
   align-items: center;
@@ -89,7 +89,7 @@
 }
 
 .post-card small {
-  color: #6d7786;
+  color: var(--muted-text);
 }
 
 .post-card-delete-message {

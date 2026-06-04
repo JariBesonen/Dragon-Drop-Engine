@@ -20,6 +20,7 @@ interface AuthContextValue {
     password: string,
   ) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: (confirmation: string) => Promise<void>;
   refreshMe: () => Promise<void>;
 }
 
@@ -43,6 +44,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void refreshMe();
   }, [refreshMe]);
+
+  useEffect(() => {
+    const theme = currentUser?.themePreference === "dark" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [currentUser?.themePreference]);
 
   const login = useCallback(
     async (identity: string, password: string): Promise<void> => {
@@ -69,6 +75,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCurrentUser(null);
   }, []);
 
+  const deleteAccount = useCallback(
+    async (confirmation: string): Promise<void> => {
+      await api.deleteAccount({ confirmation });
+      setCurrentUser(null);
+    },
+    [],
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       currentUser,
@@ -76,9 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      deleteAccount,
       refreshMe,
     }),
-    [currentUser, loading, login, register, logout, refreshMe],
+    [currentUser, loading, login, register, logout, deleteAccount, refreshMe],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

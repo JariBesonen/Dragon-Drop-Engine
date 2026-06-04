@@ -1,7 +1,7 @@
 .search-page {
   margin-top: 10vh;
   min-height: 90vh;
-  background: #f3f5f8;
+  background: var(--page-bg);
   padding: 1.2rem;
 }
 
@@ -14,15 +14,15 @@
 }
 
 .search-shell h2 {
-  color: #14213b;
+  color: var(--heading-color);
 }
 
 .search-query {
-  color: #42506a;
+  color: var(--muted-text);
 }
 
 .search-state {
-  color: #60708c;
+  color: var(--muted-text);
 }
 
 .search-error {
@@ -30,7 +30,7 @@
 }
 
 .search-empty {
-  color: #1f2f4a;
+  color: var(--body-text);
   font-weight: 600;
 }
 
@@ -41,7 +41,7 @@
 }
 
 .search-section h3 {
-  color: #1d2a42;
+  color: var(--heading-color);
 }
 
 .search-hive-list {
@@ -51,10 +51,10 @@
 }
 
 .search-hive-card {
-  border: 1px solid #d8deea;
-  background: #ffffff;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-bg);
   padding: 0.85rem;
-  color: #20334f;
+  color: var(--body-text);
   text-decoration: none;
 }
 
@@ -63,7 +63,7 @@
 }
 
 .search-hive-card p {
-  color: #53637e;
+  color: var(--muted-text);
 }
 
 .search-post-list {

@@ -7,6 +7,7 @@ export interface UserRow {
   password_hash: string;
   display_name: string;
   bio: string;
+  theme_preference: "light" | "dark";
   created_at: string;
 }
 
@@ -17,8 +18,20 @@ export function sanitizeUser(user: UserRow) {
     email: user.email,
     displayName: user.display_name,
     bio: user.bio,
+    themePreference: user.theme_preference,
     createdAt: user.created_at,
   };
+}
+
+export async function findUserByUsername(
+  username: string,
+): Promise<UserRow | null> {
+  const rows = await query<UserRow>(
+    "SELECT * FROM users WHERE username = $1 LIMIT 1",
+    [username],
+  );
+
+  return rows[0] || null;
 }
 
 export async function findUserByUsernameOrEmail(
@@ -66,4 +79,13 @@ export async function findUserById(id: number): Promise<UserRow | null> {
   );
 
   return rows[0] || null;
+}
+
+export async function deleteUserById(id: number): Promise<boolean> {
+  const rows = await query<{ id: number }>(
+    "DELETE FROM users WHERE id = $1 RETURNING id",
+    [id],
+  );
+
+  return rows.length > 0;
 }

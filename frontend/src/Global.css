@@ -7,10 +7,37 @@
 :root {
   --top-nav-height: 10vh;
   --side-nav-width: 240px;
+  --page-bg: #f3f5f8;
+  --surface-bg: #ffffff;
+  --surface-subtle-bg: #f8fafc;
+  --surface-border: #d5d9de;
+  --heading-color: #14213b;
+  --body-text: #1d2738;
+  --muted-text: #55637b;
+  --input-bg: #ffffff;
+}
+
+:root[data-theme="dark"] {
+  --page-bg: #0e1116;
+  --surface-bg: #151b24;
+  --surface-subtle-bg: #1a212d;
+  --surface-border: #2d3745;
+  --heading-color: #eff3fb;
+  --body-text: #dde4ef;
+  --muted-text: #9ca9bc;
+  --input-bg: #121822;
 }
 
 body {
   overflow-x: hidden;
+  background: var(--page-bg);
+  color: var(--body-text);
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
 }
 
 .app-content {

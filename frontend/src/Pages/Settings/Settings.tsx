@@ -1,30 +1,92 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { api } from "../../lib/api";
+import { ApiError, api } from "../../lib/api";
 import "./Settings.css";
 
 export default function Settings() {
-  const { currentUser, refreshMe } = useAuth();
-  const [message, setMessage] = useState<string>("");
+  const navigate = useNavigate();
+  const { currentUser, loading, refreshMe, deleteAccount } = useAuth();
+  const [username, setUsername] = useState<string>(currentUser?.username || "");
+  const [themePreference, setThemePreference] = useState<"light" | "dark">(
+    currentUser?.themePreference || "light",
+  );
+  const [settingsMessage, setSettingsMessage] = useState<string>("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState<string>("");
+  const [deleteMessage, setDeleteMessage] = useState<string>("");
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
+
+    setUsername(currentUser.username);
+    setThemePreference(currentUser.themePreference);
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!loading && !currentUser) {
+      navigate("/login");
+    }
+  }, [loading, currentUser, navigate]);
 
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>,
   ): Promise<void> {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const displayName = String(formData.get("displayName") || "").trim();
-    const bio = String(formData.get("bio") || "").trim();
+
+    const trimmedUsername = username.trim();
+    if (!trimmedUsername) {
+      setSettingsMessage("Username is required.");
+      return;
+    }
 
     try {
-      await api.updateSettings({ displayName, bio });
+      setIsSaving(true);
+      setSettingsMessage("");
+      await api.updateSettings({
+        username: trimmedUsername,
+        themePreference,
+      });
       await refreshMe();
-      setMessage("Settings updated.");
+      setSettingsMessage("Settings updated.");
     } catch (caughtError) {
-      setMessage(
+      if (caughtError instanceof ApiError && caughtError.status === 401) {
+        setSettingsMessage("Your session expired. Please log in again.");
+        navigate("/login");
+        return;
+      }
+
+      setSettingsMessage(
         caughtError instanceof Error
           ? caughtError.message
           : "Unable to update settings.",
       );
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleDeleteAccount(
+    event: React.FormEvent<HTMLFormElement>,
+  ): Promise<void> {
+    event.preventDefault();
+
+    try {
+      setIsDeleting(true);
+      setDeleteMessage("");
+      await deleteAccount(deleteConfirmation.trim());
+      navigate("/login");
+    } catch (caughtError) {
+      setDeleteMessage(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to delete account.",
+      );
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -33,22 +95,81 @@ export default function Settings() {
       <section className="settings-shell">
         <h2>Settings</h2>
         <form className="settings-form" onSubmit={handleSubmit}>
-          <label htmlFor="displayName">Display Name</label>
-          <input
-            id="displayName"
-            name="displayName"
-            defaultValue={currentUser?.displayName || ""}
-          />
-          <label htmlFor="bio">Bio</label>
-          <textarea
-            id="bio"
-            name="bio"
-            rows={5}
-            defaultValue={currentUser?.bio || ""}
-          />
-          <button type="submit">Save Settings</button>
+          <section className="settings-section">
+            <h3>Appearance</h3>
+            <p>Choose your preferred theme.</p>
+            <div className="settings-theme-toggle">
+              <label>
+                <input
+                  type="radio"
+                  name="theme"
+                  value="light"
+                  checked={themePreference === "light"}
+                  onChange={() => {
+                    setThemePreference("light");
+                  }}
+                />
+                Light
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="theme"
+                  value="dark"
+                  checked={themePreference === "dark"}
+                  onChange={() => {
+                    setThemePreference("dark");
+                  }}
+                />
+                Dark
+              </label>
+            </div>
+          </section>
+
+          <section className="settings-section">
+            <h3>Change Username</h3>
+            <p>Username must be 3-40 characters and can include underscores.</p>
+            <label htmlFor="username">Username</label>
+            <input
+              id="username"
+              name="username"
+              value={username}
+              onChange={(event) => {
+                setUsername(event.target.value);
+              }}
+            />
+          </section>
+
+          <button type="submit" disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save Settings"}
+          </button>
         </form>
-        {message ? <p className="settings-message">{message}</p> : null}
+
+        {settingsMessage ? (
+          <p className="settings-message">{settingsMessage}</p>
+        ) : null}
+
+        <form className="settings-danger" onSubmit={handleDeleteAccount}>
+          <h3>Delete Account</h3>
+          <p>
+            This is permanent. Type <strong>DELETE</strong> to confirm.
+          </p>
+          <label htmlFor="delete-confirmation">Confirmation</label>
+          <input
+            id="delete-confirmation"
+            value={deleteConfirmation}
+            onChange={(event) => {
+              setDeleteConfirmation(event.target.value);
+            }}
+          />
+          <button type="submit" disabled={isDeleting}>
+            {isDeleting ? "Deleting..." : "Delete Account"}
+          </button>
+        </form>
+
+        {deleteMessage ? (
+          <p className="settings-error">{deleteMessage}</p>
+        ) : null}
       </section>
     </main>
   );

@@ -6,6 +6,7 @@ export interface ProfileUserRow {
   email: string;
   display_name: string;
   bio: string;
+  theme_preference: "light" | "dark";
   created_at: string;
 }
 
@@ -21,7 +22,7 @@ export async function getProfileUserById(
   userId: number,
 ): Promise<ProfileUserRow | null> {
   const rows = await query<ProfileUserRow>(
-    "SELECT id, username, email, display_name, bio, created_at FROM users WHERE id = $1 LIMIT 1",
+    "SELECT id, username, email, display_name, bio, theme_preference, created_at FROM users WHERE id = $1 LIMIT 1",
     [userId],
   );
 
@@ -43,17 +44,21 @@ export async function getProfilePostsByUserId(
 
 export async function updateProfileSettings(
   userId: number,
+  username?: string,
   displayName?: string,
   bio?: string,
+  themePreference?: "light" | "dark",
 ): Promise<ProfileUserRow | null> {
   const rows = await query<ProfileUserRow>(
     `UPDATE users
-     SET display_name = COALESCE($2, display_name),
-         bio = COALESCE($3, bio),
+     SET username = COALESCE($2, username),
+         display_name = COALESCE($3, display_name),
+         bio = COALESCE($4, bio),
+         theme_preference = COALESCE($5, theme_preference),
          updated_at = NOW()
      WHERE id = $1
-     RETURNING id, username, email, display_name, bio, created_at`,
-    [userId, displayName, bio],
+     RETURNING id, username, email, display_name, bio, theme_preference, created_at`,
+    [userId, username, displayName, bio, themePreference],
   );
 
   return rows[0] || null;

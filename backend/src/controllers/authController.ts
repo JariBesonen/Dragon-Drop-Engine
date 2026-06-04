@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import {
   createUser,
+  deleteUserById,
   findUserById,
   findUserByIdentity,
   findUserByUsernameOrEmail,
@@ -85,4 +86,37 @@ export async function me(req: Request, res: Response): Promise<Response> {
   }
 
   return res.status(200).json({ user: sanitizeUser(user) });
+}
+
+export async function deleteAccount(
+  req: Request,
+  res: Response,
+): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const { confirmation } = req.body as { confirmation?: string };
+  if (confirmation !== "DELETE") {
+    return res.status(400).json({
+      message: "Type DELETE to confirm account deletion.",
+    });
+  }
+
+  const deleted = await deleteUserById(req.session.userId);
+  if (!deleted) {
+    return res.status(404).json({ message: "User not found." });
+  }
+
+  return new Promise((resolve) => {
+    req.session.destroy((error: Error | null) => {
+      if (error) {
+        resolve(res.status(500).json({ message: "Unable to delete account." }));
+        return;
+      }
+
+      res.clearCookie("connect.sid");
+      resolve(res.status(200).json({ message: "Account deleted." }));
+    });
+  });
 }

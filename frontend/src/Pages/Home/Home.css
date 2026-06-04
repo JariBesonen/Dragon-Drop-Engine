@@ -1,7 +1,7 @@
 .home-page {
   margin-top: 10vh;
   min-height: 90vh;
-  background: #f3f5f8;
+  background: var(--page-bg);
   padding: 1.2rem;
 }
 
@@ -15,11 +15,11 @@
 
 .home-shell h2 {
   font-size: clamp(1.4rem, 2vw, 2rem);
-  color: #14213b;
+  color: var(--heading-color);
 }
 
 .home-description {
-  color: #546079;
+  color: var(--muted-text);
 }
 
 .home-error {

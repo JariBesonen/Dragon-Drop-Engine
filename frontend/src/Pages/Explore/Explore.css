@@ -1,7 +1,7 @@
 .feed-page {
   margin-top: 10vh;
   min-height: 90vh;
-  background: #f3f5f8;
+  background: var(--page-bg);
   padding: 1.2rem;
 }
 
@@ -15,11 +15,11 @@
 
 .feed-shell h2 {
   font-size: clamp(1.4rem, 2vw, 2rem);
-  color: #14213b;
+  color: var(--heading-color);
 }
 
 .feed-description {
-  color: #546079;
+  color: var(--muted-text);
 }
 
 .feed-error {
@@ -27,12 +27,12 @@
 }
 
 .feed-query {
-  color: #33415b;
+  color: var(--body-text);
   font-weight: 600;
 }
 
 .feed-empty {
-  color: #60708c;
+  color: var(--muted-text);
 }
 
 .feed-list {
