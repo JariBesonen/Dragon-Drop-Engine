@@ -70,6 +70,13 @@
   font-size: 0.93rem;
 }
 
+.hive-join-message {
+  color: #2a5a33;
+  background: #edf8ef;
+  border: 1px solid #b8dfbf;
+  padding: 0.55rem 0.7rem;
+}
+
 .hive-tags {
   display: flex;
   gap: 0.45rem;

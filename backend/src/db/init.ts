@@ -65,4 +65,13 @@ export async function initDatabase(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     );`,
   );
+
+  await query(
+    `CREATE TABLE IF NOT EXISTS hive_memberships (
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      hive_id INTEGER NOT NULL REFERENCES hives(id) ON DELETE CASCADE,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, hive_id)
+    );`,
+  );
 }

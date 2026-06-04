@@ -35,6 +35,11 @@ export interface ApiSearchResult {
   hives: ApiHive[];
 }
 
+export interface ApiHiveDetailResult {
+  hive: ApiHive;
+  joined: boolean;
+}
+
 export class ApiError extends Error {
   status: number;
 
@@ -116,7 +121,11 @@ export const api = {
       body: formData,
     }),
   getMyHives: () => request<{ hives: ApiHive[] }>("/api/hives/me"),
-  getHive: (id: number) => request<{ hive: ApiHive }>(`/api/hives/${id}`),
+  getHive: (id: number) => request<ApiHiveDetailResult>(`/api/hives/${id}`),
+  joinHive: (id: number) =>
+    request<{ message: string; joined: boolean }>(`/api/hives/${id}/join`, {
+      method: "POST",
+    }),
   getMyProfile: () =>
     request<{ user: ApiUser; posts: ApiPost[] }>("/api/profile/me"),
   updateSettings: (body: { displayName?: string; bio?: string }) =>

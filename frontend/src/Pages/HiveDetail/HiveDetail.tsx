@@ -35,6 +35,9 @@ export default function HiveDetail() {
   const [loading, setLoading] = useState<boolean>(true);
   const [postsLoading, setPostsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const [isJoined, setIsJoined] = useState<boolean>(false);
+  const [joinMessage, setJoinMessage] = useState<string>("");
+  const [isJoining, setIsJoining] = useState<boolean>(false);
   const [isPostModalOpen, setIsPostModalOpen] = useState<boolean>(false);
   const [postCaption, setPostCaption] = useState<string>("");
   const [postImageFile, setPostImageFile] = useState<File | null>(null);
@@ -59,6 +62,7 @@ export default function HiveDetail() {
         ]);
 
         setHive(hiveResponse.hive);
+        setIsJoined(hiveResponse.joined);
         setPosts(postsResponse.posts);
         setError("");
       } catch (caughtError) {
@@ -75,6 +79,37 @@ export default function HiveDetail() {
 
     void loadHive();
   }, [id]);
+
+  async function handleJoinHive(): Promise<void> {
+    const hiveId = Number(id);
+    if (!currentUser) {
+      setJoinMessage("Log in to join this hive.");
+      return;
+    }
+
+    if (!Number.isInteger(hiveId) || hiveId <= 0) {
+      setJoinMessage("Invalid hive id.");
+      return;
+    }
+
+    try {
+      setIsJoining(true);
+      setJoinMessage("");
+      const response = await api.joinHive(hiveId);
+      setIsJoined(response.joined);
+      setJoinMessage(
+        "You joined this hive. Posts from this hive now appear in Home feed.",
+      );
+    } catch (caughtError) {
+      setJoinMessage(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to join hive.",
+      );
+    } finally {
+      setIsJoining(false);
+    }
+  }
 
   useEffect(() => {
     return () => {
@@ -200,8 +235,15 @@ export default function HiveDetail() {
             </p>
           </div>
           <div className="hive-actions">
-            <button type="button" className="hive-follow-button" disabled>
-              Join Hive (Soon)
+            <button
+              type="button"
+              className="hive-follow-button"
+              disabled={!currentUser || isJoined || isJoining}
+              onClick={() => {
+                void handleJoinHive();
+              }}
+            >
+              {isJoined ? "Joined" : isJoining ? "Joining..." : "Join Hive"}
             </button>
             <button
               type="button"
@@ -218,8 +260,12 @@ export default function HiveDetail() {
 
         {!currentUser ? (
           <p className="hive-auth-note">
-            Log in to create a post in this hive.
+            Log in to join this hive and create posts.
           </p>
+        ) : null}
+
+        {joinMessage ? (
+          <p className="hive-join-message">{joinMessage}</p>
         ) : null}
 
         {hive.tags.length > 0 ? (

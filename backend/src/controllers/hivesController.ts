@@ -3,6 +3,8 @@ import {
   createHive,
   getHiveById,
   getHivesByOwnerId,
+  isUserJoinedHive,
+  joinHive,
   mapHive,
 } from "../models/hivesModel";
 
@@ -89,5 +91,33 @@ export async function getById(req: Request, res: Response): Promise<Response> {
     return res.status(404).json({ message: "Hive not found." });
   }
 
-  return res.json({ hive: mapHive(hive) });
+  if (!req.session.userId) {
+    return res.json({ hive: mapHive(hive), joined: false });
+  }
+
+  const joined =
+    hive.owner_user_id === req.session.userId
+      ? true
+      : await isUserJoinedHive(req.session.userId, hiveId);
+
+  return res.json({ hive: mapHive(hive), joined });
+}
+
+export async function join(req: Request, res: Response): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const hiveId = Number(req.params.id);
+  if (!Number.isInteger(hiveId) || hiveId <= 0) {
+    return res.status(400).json({ message: "Invalid hive id." });
+  }
+
+  const hive = await getHiveById(hiveId);
+  if (!hive) {
+    return res.status(404).json({ message: "Hive not found." });
+  }
+
+  await joinHive(req.session.userId, hiveId);
+  return res.status(200).json({ message: "Joined hive.", joined: true });
 }

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { create, getById, getMine } from "../controllers/hivesController";
+import { create, getById, getMine, join } from "../controllers/hivesController";
 import {
   create as createPost,
   hivePosts,
@@ -10,6 +10,7 @@ import { uploadHivePostImage } from "../middleware/upload";
 const hivesRouter = Router();
 
 hivesRouter.get("/me", getMine);
+hivesRouter.post("/:id/join", join);
 hivesRouter.get("/:id/posts", hivePosts);
 hivesRouter.post("/:id/posts", uploadHivePostImage, createPost);
 hivesRouter.get("/:id", getById);

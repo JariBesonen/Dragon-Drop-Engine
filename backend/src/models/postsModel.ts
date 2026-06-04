@@ -44,7 +44,8 @@ export async function getHomePosts(userId: number): Promise<PostRow[]> {
      FROM posts p
      JOIN users u ON u.id = p.user_id
      LEFT JOIN follows f ON f.followed_id = p.user_id AND f.follower_id = $1
-     WHERE p.user_id = $1 OR f.follower_id = $1
+     LEFT JOIN hive_memberships hm ON hm.hive_id = p.hive_id AND hm.user_id = $1
+     WHERE p.user_id = $1 OR f.follower_id = $1 OR hm.user_id = $1
      ORDER BY p.created_at DESC
      LIMIT 60`,
     [userId],

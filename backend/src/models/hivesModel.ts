@@ -39,7 +39,9 @@ export async function createHive(
   return rows[0];
 }
 
-export async function getHivesByOwnerId(ownerUserId: number): Promise<HiveRow[]> {
+export async function getHivesByOwnerId(
+  ownerUserId: number,
+): Promise<HiveRow[]> {
   return query<HiveRow>(
     `SELECT *
      FROM hives
@@ -59,4 +61,29 @@ export async function getHiveById(id: number): Promise<HiveRow | null> {
   );
 
   return rows[0] ?? null;
+}
+
+export async function isUserJoinedHive(
+  userId: number,
+  hiveId: number,
+): Promise<boolean> {
+  const rows = await query<{ exists: boolean }>(
+    `SELECT EXISTS (
+       SELECT 1
+       FROM hive_memberships
+       WHERE user_id = $1 AND hive_id = $2
+     )`,
+    [userId, hiveId],
+  );
+
+  return rows[0]?.exists ?? false;
+}
+
+export async function joinHive(userId: number, hiveId: number): Promise<void> {
+  await query(
+    `INSERT INTO hive_memberships (user_id, hive_id)
+     VALUES ($1, $2)
+     ON CONFLICT (user_id, hive_id) DO NOTHING`,
+    [userId, hiveId],
+  );
 }
