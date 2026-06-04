@@ -38,6 +38,35 @@
   font: inherit;
 }
 
+.create-post-form input[type="file"] {
+  padding: 0.45rem;
+  background: #f8fafd;
+}
+
+.create-banner-preview {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border: 1px solid #d7dde7;
+  border-radius: 8px;
+}
+
+.create-remove-banner {
+  justify-self: start;
+  margin-top: -0.25rem;
+  background: transparent;
+  color: #8d2a2a;
+  border: 1px solid #d7dde7;
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+}
+
+.create-remove-banner:hover {
+  border-color: #c96a6a;
+  color: #a22f2f;
+}
+
 .create-post-form button {
   margin-top: 0.5rem;
   border: none;

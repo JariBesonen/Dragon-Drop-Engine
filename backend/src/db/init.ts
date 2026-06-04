@@ -33,4 +33,16 @@ export async function initDatabase(): Promise<void> {
       PRIMARY KEY (follower_id, followed_id)
     );`,
   );
+
+  await query(
+    `CREATE TABLE IF NOT EXISTS hives (
+      id SERIAL PRIMARY KEY,
+      owner_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      name VARCHAR(80) UNIQUE NOT NULL,
+      description TEXT NOT NULL,
+      banner_image TEXT,
+      tags TEXT[] NOT NULL DEFAULT '{}',
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );`,
+  );
 }

@@ -8,6 +8,7 @@ import {
 import Home from "./Pages/Home/Home";
 import Create from "./Pages/Create/module";
 import Explore from "./Pages/Explore/Explore";
+import HiveDetail from "./Pages/HiveDetail/HiveDetail";
 import Profile from "./Pages/Profile/Profile";
 import Settings from "./Pages/Settings/Settings";
 import Login from "./Pages/Login/Login";
@@ -31,6 +32,7 @@ function AppLayout() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/explore" element={<Explore />} />
+          <Route path="/hive/:id" element={<HiveDetail />} />
           <Route path="/create" element={<Create />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />

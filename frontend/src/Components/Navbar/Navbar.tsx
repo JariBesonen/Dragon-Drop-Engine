@@ -45,7 +45,7 @@ function Navbar() {
             <Link to="/">home</Link>
           </li>
           <li>
-            <Link to="/create">create post</Link>
+            <Link to="/create">create hive</Link>
           </li>
           <li>
             <Link to="/profile">profile</Link>

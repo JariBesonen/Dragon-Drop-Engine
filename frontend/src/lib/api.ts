@@ -18,24 +18,49 @@ export interface ApiPost {
   createdAt: string;
 }
 
+export interface ApiHive {
+  id: number;
+  ownerUserId: number;
+  name: string;
+  description: string;
+  bannerImage: string | null;
+  tags: string[];
+  createdAt: string;
+}
+
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  const isFormDataBody = init?.body instanceof FormData;
+
+  if (!isFormDataBody && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
     ...init,
+    headers,
   });
 
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as {
       message?: string;
     } | null;
-    throw new Error(
+    throw new ApiError(
       payload?.message || `Request failed with status ${response.status}`,
+      response.status,
     );
   }
 
@@ -65,6 +90,13 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  createHive: (formData: FormData) =>
+    request<{ hive: ApiHive }>("/api/hives", {
+      method: "POST",
+      body: formData,
+    }),
+  getMyHives: () => request<{ hives: ApiHive[] }>("/api/hives/me"),
+  getHive: (id: number) => request<{ hive: ApiHive }>(`/api/hives/${id}`),
   getMyProfile: () =>
     request<{ user: ApiUser; posts: ApiPost[] }>("/api/profile/me"),
   updateSettings: (body: { displayName?: string; bio?: string }) =>

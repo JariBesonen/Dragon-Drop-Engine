@@ -1,7 +1,38 @@
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { api, type ApiHive } from "../../lib/api";
 import "./SideNavbar.css";
 
 function SideNavbar() {
+  const { currentUser } = useAuth();
+  const [myHives, setMyHives] = useState<ApiHive[]>([]);
+  const [hiveError, setHiveError] = useState<string>("");
+
+  useEffect(() => {
+    async function loadMyHives(): Promise<void> {
+      if (!currentUser) {
+        setMyHives([]);
+        setHiveError("");
+        return;
+      }
+
+      try {
+        const response = await api.getMyHives();
+        setMyHives(response.hives);
+        setHiveError("");
+      } catch (caughtError) {
+        setHiveError(
+          caughtError instanceof Error
+            ? caughtError.message
+            : "Unable to load your hives.",
+        );
+      }
+    }
+
+    void loadMyHives();
+  }, [currentUser]);
+
   return (
     <aside className="side-nav" aria-label="Sidebar navigation">
       <section className="side-nav-section">
@@ -10,12 +41,27 @@ function SideNavbar() {
         <NavLink to="/explore">Explore</NavLink>
       </section>
 
-      <section className="side-nav-section">
-        <h2>Added Hives</h2>
-        <p className="side-placeholder">
-          Communities you follow will appear here.
-        </p>
-      </section>
+      {currentUser ? (
+        <section className="side-nav-section">
+          <h2>My Hives</h2>
+          {hiveError ? <p className="side-error">{hiveError}</p> : null}
+          {!hiveError && myHives.length === 0 ? (
+            <p className="side-placeholder">Create a hive to see it here.</p>
+          ) : null}
+          <div className="side-hives-list">
+            {myHives.slice(0, 5).map((hive: ApiHive) => (
+              <NavLink key={hive.id} to={`/hive/${hive.id}`}>
+                {hive.name}
+              </NavLink>
+            ))}
+          </div>
+          {myHives.length > 5 ? (
+            <NavLink className="side-view-all" to="/profile">
+              View all
+            </NavLink>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="side-nav-section side-nav-resources">
         <h2>Resources</h2>

@@ -1,43 +1,98 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { api } from "../../lib/api";
+import { ApiError, api } from "../../lib/api";
 import "./Create.css";
 
 export default function Create() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
 
-  const [title, setTitle] = useState<string>("");
-  const [content, setContent] = useState<string>("");
-  const [community, setCommunity] = useState<string>("general");
+  const [name, setName] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [tagsInput, setTagsInput] = useState<string>("");
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
+
+  function clearBanner(): void {
+    setBannerFile(null);
+    setBannerPreview("");
+
+    const input = document.getElementById("hive-banner") as HTMLInputElement | null;
+    if (input) {
+      input.value = "";
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      if (bannerPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(bannerPreview);
+      }
+    };
+  }, [bannerPreview]);
 
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>,
   ): Promise<void> {
     event.preventDefault();
+    setMessage("");
+
+    if (!name.trim() || !description.trim()) {
+      setMessage("Hive name and description are required.");
+      return;
+    }
+
+    const tags = tagsInput
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0)
+      .slice(0, 5);
 
     try {
-      await api.createPost({ title, content, community });
-      setMessage("Post published.");
-      navigate("/");
+      setIsSubmitting(true);
+      const formData = new FormData();
+      formData.append("name", name.trim());
+      formData.append("description", description.trim());
+
+      if (tags.length > 0) {
+        formData.append("tags", tags.join(","));
+      }
+
+      if (bannerFile) {
+        formData.append("bannerImage", bannerFile);
+      }
+
+      await api.createHive(formData);
+      setMessage("Hive created successfully.");
+      navigate("/explore");
     } catch (caughtError) {
+      if (caughtError instanceof ApiError && caughtError.status === 409) {
+        setMessage(
+          "That hive name is already taken. Choose a different name and try again.",
+        );
+        return;
+      }
+
       setMessage(
         caughtError instanceof Error
           ? caughtError.message
-          : "Unable to create post.",
+          : "Unable to create hive.",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   return (
     <main className="create-post-page">
       <section className="create-post-shell">
-        <h2>Create Post</h2>
+        <h2>Create Hive</h2>
         {!currentUser ? (
           <p className="create-note">
-            Login from the top navigation before posting.
+            Login from the top navigation before creating a hive.
           </p>
         ) : null}
         <form
@@ -46,39 +101,91 @@ export default function Create() {
             void handleSubmit(event);
           }}
         >
-          <label htmlFor="title">Title</label>
+          <label htmlFor="hive-name">Hive Name</label>
           <input
-            id="title"
-            value={title}
+            id="hive-name"
+            value={name}
             onChange={(event) => {
-              setTitle(event.target.value);
+              setName(event.target.value);
             }}
             required
           />
 
-          <label htmlFor="community">Community</label>
-          <input
-            id="community"
-            value={community}
-            onChange={(event) => {
-              setCommunity(event.target.value);
-            }}
-            required
-          />
-
-          <label htmlFor="content">Content</label>
+          <label htmlFor="hive-description">Description</label>
           <textarea
-            id="content"
+            id="hive-description"
             rows={8}
-            value={content}
+            value={description}
             onChange={(event) => {
-              setContent(event.target.value);
+              setDescription(event.target.value);
             }}
             required
           />
 
-          <button type="submit" disabled={!currentUser}>
-            Publish
+          <label htmlFor="hive-banner">Banner Image</label>
+          <input
+            id="hive-banner"
+            type="file"
+            accept="image/*"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (!file) {
+                clearBanner();
+                return;
+              }
+
+              if (file.size > 2 * 1024 * 1024) {
+                setMessage("Banner image must be 2MB or smaller.");
+                clearBanner();
+                return;
+              }
+
+              if (!file.type.startsWith("image/")) {
+                setMessage("Banner file must be an image.");
+                clearBanner();
+                return;
+              }
+
+              setMessage("");
+              if (bannerPreview.startsWith("blob:")) {
+                URL.revokeObjectURL(bannerPreview);
+              }
+              setBannerFile(file);
+              setBannerPreview(URL.createObjectURL(file));
+            }}
+          />
+
+          {bannerPreview ? (
+            <>
+              <img
+                className="create-banner-preview"
+                src={bannerPreview}
+                alt="Hive banner preview"
+              />
+              <button
+                type="button"
+                className="create-remove-banner"
+                onClick={() => {
+                  clearBanner();
+                }}
+              >
+                Remove Banner
+              </button>
+            </>
+          ) : null}
+
+          <label htmlFor="hive-tags">Tags (comma separated, up to 5)</label>
+          <input
+            id="hive-tags"
+            value={tagsInput}
+            onChange={(event) => {
+              setTagsInput(event.target.value);
+            }}
+            placeholder="gaming, art, technology"
+          />
+
+          <button type="submit" disabled={!currentUser || isSubmitting}>
+            {isSubmitting ? "Creating..." : "Create Hive"}
           </button>
         </form>
         {message ? <p className="create-message">{message}</p> : null}
