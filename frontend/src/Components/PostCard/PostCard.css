@@ -61,11 +61,43 @@
   line-height: 1.45;
 }
 
+.post-card-vote-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.post-card-vote-button {
+  border: 1px solid #d5d9de;
+  background: #f7f9fc;
+  color: #22304a;
+  padding: 0.35rem 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.post-card-vote-button.active {
+  border-color: #ff5b00;
+  background: #fff3ea;
+  color: #b43e00;
+}
+
+.post-card-vote-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .post-card small {
   color: #6d7786;
 }
 
 .post-card-delete-message {
   color: #a62020;
+  font-size: 0.9rem;
+}
+
+.post-card-vote-message {
+  color: #6a4a00;
   font-size: 0.9rem;
 }

@@ -55,6 +55,17 @@ export async function initDatabase(): Promise<void> {
   );
 
   await query(
+    `CREATE TABLE IF NOT EXISTS post_votes (
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      vote SMALLINT NOT NULL CHECK (vote IN (-1, 1)),
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, post_id)
+    );`,
+  );
+
+  await query(
     `CREATE TABLE IF NOT EXISTS hives (
       id SERIAL PRIMARY KEY,
       owner_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

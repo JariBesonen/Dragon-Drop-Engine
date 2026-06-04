@@ -11,6 +11,9 @@ export interface PostRow {
   created_at: string;
   username: string;
   display_name: string;
+  like_count: number;
+  dislike_count: number;
+  user_vote: number | null;
 }
 
 export function mapPost(post: PostRow) {
@@ -25,22 +28,43 @@ export function mapPost(post: PostRow) {
     community: post.community,
     imageUrl: post.image_url,
     createdAt: post.created_at,
+    likeCount: Number(post.like_count) || 0,
+    dislikeCount: Number(post.dislike_count) || 0,
+    userVote: post.user_vote === null ? null : Number(post.user_vote),
   };
 }
 
-export async function getExplorePosts(): Promise<PostRow[]> {
+function postVoteSelect(userVoteExpression: string): string {
+  return `
+    p.*,
+    u.username,
+    u.display_name,
+    COALESCE((SELECT COUNT(*) FROM post_votes pv WHERE pv.post_id = p.id AND pv.vote = 1), 0) AS like_count,
+    COALESCE((SELECT COUNT(*) FROM post_votes pv WHERE pv.post_id = p.id AND pv.vote = -1), 0) AS dislike_count,
+    ${userVoteExpression} AS user_vote
+  `;
+}
+
+export async function getExplorePosts(userId?: number): Promise<PostRow[]> {
   return query<PostRow>(
-    `SELECT p.*, u.username, u.display_name
+    `SELECT ${postVoteSelect(
+      typeof userId === "number"
+        ? `COALESCE((SELECT pv.vote FROM post_votes pv WHERE pv.post_id = p.id AND pv.user_id = $1 LIMIT 1), 0)`
+        : `0::smallint`,
+    )}
      FROM posts p
      JOIN users u ON u.id = p.user_id
      ORDER BY p.created_at DESC
      LIMIT 60`,
+    typeof userId === "number" ? [userId] : [],
   );
 }
 
 export async function getHomePosts(userId: number): Promise<PostRow[]> {
   return query<PostRow>(
-    `SELECT DISTINCT p.*, u.username, u.display_name
+    `SELECT DISTINCT ${postVoteSelect(
+      `COALESCE((SELECT pv.vote FROM post_votes pv WHERE pv.post_id = p.id AND pv.user_id = $1 LIMIT 1), 0)`,
+    )}
      FROM posts p
      JOIN users u ON u.id = p.user_id
      LEFT JOIN follows f ON f.followed_id = p.user_id AND f.follower_id = $1
@@ -52,26 +76,40 @@ export async function getHomePosts(userId: number): Promise<PostRow[]> {
   );
 }
 
-export async function getHivePosts(hiveId: number): Promise<PostRow[]> {
+export async function getHivePosts(
+  hiveId: number,
+  userId?: number,
+): Promise<PostRow[]> {
   return query<PostRow>(
-    `SELECT p.*, u.username, u.display_name
+    `SELECT ${postVoteSelect(
+      typeof userId === "number"
+        ? `COALESCE((SELECT pv.vote FROM post_votes pv WHERE pv.post_id = p.id AND pv.user_id = $2 LIMIT 1), 0)`
+        : `0::smallint`,
+    )}
      FROM posts p
      JOIN users u ON u.id = p.user_id
      WHERE p.hive_id = $1
      ORDER BY p.created_at DESC
      LIMIT 60`,
-    [hiveId],
+    typeof userId === "number" ? [hiveId, userId] : [hiveId],
   );
 }
 
-export async function getPostById(id: number): Promise<PostRow | null> {
+export async function getPostById(
+  id: number,
+  userId?: number,
+): Promise<PostRow | null> {
   const rows = await query<PostRow>(
-    `SELECT p.*, u.username, u.display_name
+    `SELECT ${postVoteSelect(
+      typeof userId === "number"
+        ? `COALESCE((SELECT pv.vote FROM post_votes pv WHERE pv.post_id = p.id AND pv.user_id = $2 LIMIT 1), 0)`
+        : `0::smallint`,
+    )}
      FROM posts p
      JOIN users u ON u.id = p.user_id
      WHERE p.id = $1
      LIMIT 1`,
-    [id],
+    typeof userId === "number" ? [id, userId] : [id],
   );
 
   return rows[0] ?? null;
@@ -115,9 +153,43 @@ export async function deletePostByOwner(
      WHERE id = $1 AND user_id = $2
      RETURNING id, user_id, hive_id, title, content, community, image_url, created_at,
       ''::text as username,
-      ''::text as display_name`,
+      ''::text as display_name,
+      0::bigint as like_count,
+      0::bigint as dislike_count,
+      0::smallint as user_vote`,
     [postId, ownerUserId],
   );
 
   return rows[0] ?? null;
+}
+
+export async function voteOnPost(
+  userId: number,
+  postId: number,
+  vote: 1 | -1,
+): Promise<PostRow | null> {
+  const post = await getPostById(postId, userId);
+  if (!post) {
+    return null;
+  }
+
+  const currentVote = post.user_vote;
+
+  if (currentVote === vote) {
+    await query(
+      `DELETE FROM post_votes
+       WHERE user_id = $1 AND post_id = $2`,
+      [userId, postId],
+    );
+  } else {
+    await query(
+      `INSERT INTO post_votes (user_id, post_id, vote, updated_at)
+       VALUES ($1, $2, $3, NOW())
+       ON CONFLICT (user_id, post_id)
+       DO UPDATE SET vote = EXCLUDED.vote, updated_at = NOW()`,
+      [userId, postId, vote],
+    );
+  }
+
+  return getPostById(postId, userId);
 }

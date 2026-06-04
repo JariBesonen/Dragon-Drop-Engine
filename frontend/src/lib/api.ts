@@ -18,6 +18,9 @@ export interface ApiPost {
   community: string;
   imageUrl: string | null;
   createdAt: string;
+  likeCount: number;
+  dislikeCount: number;
+  userVote: number | null;
 }
 
 export interface ApiHive {
@@ -114,6 +117,14 @@ export const api = {
   deletePost: (id: number) =>
     request<{ message: string }>(`/api/posts/${id}`, {
       method: "DELETE",
+    }),
+  likePost: (id: number) =>
+    request<{ post: ApiPost }>(`/api/posts/${id}/like`, {
+      method: "POST",
+    }),
+  dislikePost: (id: number) =>
+    request<{ post: ApiPost }>(`/api/posts/${id}/dislike`, {
+      method: "POST",
     }),
   createHive: (formData: FormData) =>
     request<{ hive: ApiHive }>("/api/hives", {

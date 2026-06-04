@@ -10,10 +10,11 @@ import {
   getHomePosts,
   getPostById,
   mapPost,
+  voteOnPost,
 } from "../models/postsModel";
 
-export async function explore(_req: Request, res: Response): Promise<Response> {
-  const posts = await getExplorePosts();
+export async function explore(req: Request, res: Response): Promise<Response> {
+  const posts = await getExplorePosts(req.session.userId);
   return res.status(200).json({ posts: posts.map(mapPost) });
 }
 
@@ -82,7 +83,7 @@ export async function hivePosts(
     return res.status(404).json({ message: "Hive not found." });
   }
 
-  const posts = await getHivePosts(hiveId);
+  const posts = await getHivePosts(hiveId, req.session.userId);
   return res.status(200).json({ posts: posts.map(mapPost) });
 }
 
@@ -121,4 +122,34 @@ export async function remove(req: Request, res: Response): Promise<Response> {
   }
 
   return res.status(200).json({ message: "Post deleted." });
+}
+
+async function handleVote(
+  req: Request,
+  res: Response,
+  vote: 1 | -1,
+): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const postId = Number(req.params.id);
+  if (!Number.isInteger(postId) || postId <= 0) {
+    return res.status(400).json({ message: "Invalid post id." });
+  }
+
+  const updatedPost = await voteOnPost(req.session.userId, postId, vote);
+  if (!updatedPost) {
+    return res.status(404).json({ message: "Post not found." });
+  }
+
+  return res.status(200).json({ post: mapPost(updatedPost) });
+}
+
+export async function like(req: Request, res: Response): Promise<Response> {
+  return handleVote(req, res, 1);
+}
+
+export async function dislike(req: Request, res: Response): Promise<Response> {
+  return handleVote(req, res, -1);
 }

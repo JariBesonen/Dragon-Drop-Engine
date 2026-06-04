@@ -32,6 +32,15 @@ export default function PostCard({ post }: { post: ApiPost }) {
   const [isDeleted, setIsDeleted] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [deleteMessage, setDeleteMessage] = useState<string>("");
+  const [likeCount, setLikeCount] = useState<number>(post.likeCount || 0);
+  const [dislikeCount, setDislikeCount] = useState<number>(
+    post.dislikeCount || 0,
+  );
+  const [userVote, setUserVote] = useState<number | null>(
+    post.userVote ?? null,
+  );
+  const [isVoting, setIsVoting] = useState<boolean>(false);
+  const [voteMessage, setVoteMessage] = useState<string>("");
 
   const imageSrc = resolveMediaSrc(post.imageUrl);
   const shouldRenderBody =
@@ -64,6 +73,35 @@ export default function PostCard({ post }: { post: ApiPost }) {
     }
   }
 
+  async function handleVote(nextVote: 1 | -1): Promise<void> {
+    if (!currentUser) {
+      setVoteMessage("Log in to like or dislike posts.");
+      return;
+    }
+
+    try {
+      setIsVoting(true);
+      setVoteMessage("");
+
+      const response =
+        nextVote === 1
+          ? await api.likePost(post.id)
+          : await api.dislikePost(post.id);
+
+      setLikeCount(response.post.likeCount ?? 0);
+      setDislikeCount(response.post.dislikeCount ?? 0);
+      setUserVote(response.post.userVote ?? null);
+    } catch (caughtError) {
+      setVoteMessage(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to update vote.",
+      );
+    } finally {
+      setIsVoting(false);
+    }
+  }
+
   if (isDeleted) {
     return null;
   }
@@ -93,9 +131,36 @@ export default function PostCard({ post }: { post: ApiPost }) {
         <img className="post-card-image" src={imageSrc} alt={post.title} />
       ) : null}
       {shouldRenderBody ? <p>{post.content}</p> : null}
+      <div className="post-card-vote-row">
+        <button
+          type="button"
+          className={`post-card-vote-button ${userVote === 1 ? "active" : ""}`}
+          onClick={() => {
+            void handleVote(1);
+          }}
+          disabled={!currentUser || isVoting}
+          aria-pressed={userVote === 1}
+        >
+          Like <span>{likeCount}</span>
+        </button>
+        <button
+          type="button"
+          className={`post-card-vote-button ${userVote === -1 ? "active" : ""}`}
+          onClick={() => {
+            void handleVote(-1);
+          }}
+          disabled={!currentUser || isVoting}
+          aria-pressed={userVote === -1}
+        >
+          Dislike <span>{dislikeCount}</span>
+        </button>
+      </div>
       <small>{formatDate(post.createdAt)}</small>
       {deleteMessage ? (
         <p className="post-card-delete-message">{deleteMessage}</p>
+      ) : null}
+      {voteMessage ? (
+        <p className="post-card-vote-message">{voteMessage}</p>
       ) : null}
     </article>
   );
