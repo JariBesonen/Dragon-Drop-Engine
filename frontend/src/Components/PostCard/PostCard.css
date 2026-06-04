@@ -11,13 +11,49 @@
 .post-card-header {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   font-size: 0.85rem;
   color: #5a6472;
+}
+
+.post-card-meta-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.post-card-author {
+  text-align: right;
+  font-weight: 600;
+  color: #31415d;
+}
+
+.post-card-delete-button {
+  border: 1px solid #e2b5b5;
+  background: #fff5f5;
+  color: #a62020;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+}
+
+.post-card-delete-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .post-card h3 {
   font-size: 1.15rem;
   color: #162133;
+}
+
+.post-card-image {
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #d9dfe8;
 }
 
 .post-card p {
@@ -27,4 +63,9 @@
 
 .post-card small {
   color: #6d7786;
+}
+
+.post-card-delete-message {
+  color: #a62020;
+  font-size: 0.9rem;
 }

@@ -10,11 +10,13 @@ export interface ApiUser {
 export interface ApiPost {
   id: number;
   userId: number;
+  hiveId: number | null;
   authorUsername: string;
   authorDisplayName: string;
   title: string;
   content: string;
   community: string;
+  imageUrl: string | null;
   createdAt: string;
 }
 
@@ -89,6 +91,16 @@ export const api = {
     request<{ post: ApiPost }>("/api/posts", {
       method: "POST",
       body: JSON.stringify(body),
+    }),
+  getHivePosts: (id: number) => request<{ posts: ApiPost[] }>(`/api/hives/${id}/posts`),
+  createHivePost: (id: number, formData: FormData) =>
+    request<{ post: ApiPost }>(`/api/hives/${id}/posts`, {
+      method: "POST",
+      body: formData,
+    }),
+  deletePost: (id: number) =>
+    request<{ message: string }>(`/api/posts/${id}`, {
+      method: "DELETE",
     }),
   createHive: (formData: FormData) =>
     request<{ hive: ApiHive }>("/api/hives", {

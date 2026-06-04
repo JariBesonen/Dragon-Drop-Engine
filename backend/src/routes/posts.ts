@@ -1,10 +1,12 @@
 import { Router } from "express";
-import { create, explore, home } from "../controllers/postsController";
+import { create, explore, home, remove } from "../controllers/postsController";
+import { uploadHivePostImage } from "../middleware/upload";
 
 const postsRouter = Router();
 
 postsRouter.get("/explore", explore);
 postsRouter.get("/home", home);
-postsRouter.post("/", create);
+postsRouter.delete("/:id", remove);
+postsRouter.post("/", uploadHivePostImage, create);
 
 export default postsRouter;

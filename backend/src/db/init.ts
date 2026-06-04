@@ -25,6 +25,26 @@ export async function initDatabase(): Promise<void> {
     );`,
   );
 
+  await query(`ALTER TABLE posts ADD COLUMN IF NOT EXISTS hive_id INTEGER;`);
+  await query(`ALTER TABLE posts ADD COLUMN IF NOT EXISTS image_url TEXT;`);
+  await query(
+    `DO $$
+     BEGIN
+       IF NOT EXISTS (
+         SELECT 1
+         FROM pg_constraint
+         WHERE conname = 'posts_hive_id_fkey'
+       ) THEN
+         ALTER TABLE posts
+           ADD CONSTRAINT posts_hive_id_fkey
+           FOREIGN KEY (hive_id)
+           REFERENCES hives(id)
+           ON DELETE CASCADE;
+       END IF;
+     END
+     $$;`,
+  );
+
   await query(
     `CREATE TABLE IF NOT EXISTS follows (
       follower_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
