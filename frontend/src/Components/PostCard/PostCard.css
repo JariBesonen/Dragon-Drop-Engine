@@ -67,6 +67,14 @@
   flex-wrap: wrap;
 }
 
+.post-card-comment-toggle {
+  border: 1px solid var(--surface-border);
+  background: var(--surface-bg);
+  color: var(--body-text);
+  padding: 0.35rem 0.7rem;
+  border-radius: 8px;
+}
+
 .post-card-vote-button {
   border: 1px solid var(--surface-border);
   background: var(--surface-subtle-bg);
@@ -92,12 +100,148 @@
   color: var(--muted-text);
 }
 
+.post-card-comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.post-card-comment-form textarea,
+.post-card-reply-form textarea {
+  width: 100%;
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+  background: var(--input-bg);
+  color: var(--body-text);
+  resize: vertical;
+}
+
+.post-card-comment-form button,
+.post-card-reply-form button,
+.post-card-comment-reply-button {
+  align-self: flex-start;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-subtle-bg);
+  color: var(--body-text);
+  border-radius: 8px;
+  padding: 0.35rem 0.7rem;
+}
+
+.post-card-comment-vote-row {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.post-card-comment-vote-button {
+  border: 1px solid var(--surface-border);
+  background: var(--surface-bg);
+  color: var(--body-text);
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.post-card-comment-vote-button.active {
+  border-color: #ff5b00;
+  background: #fff3ea;
+  color: #b43e00;
+}
+
+.post-card-comment-vote-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.post-card-comments-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  border-top: 1px solid var(--surface-border);
+  padding-top: 0.65rem;
+}
+
+.post-card-comment {
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  background: var(--surface-subtle-bg);
+  padding: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.post-card-comment-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted-text);
+  font-size: 0.82rem;
+}
+
+.post-card-comment-meta span {
+  color: var(--body-text);
+  font-weight: 600;
+}
+
+.post-card-comment-meta-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.post-card-comment-delete-button {
+  border: 1px solid #e2b5b5;
+  background: #fff5f5;
+  color: #a62020;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
+}
+
+.post-card-comment-delete-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.post-card-comment-deleted {
+  color: var(--muted-text);
+  font-style: italic;
+}
+
+.post-card-deleted-thread-toggle {
+  align-self: flex-start;
+  border: 1px dashed var(--surface-border);
+  background: transparent;
+  color: var(--muted-text);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+}
+
+.post-card-reply-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
 .post-card-delete-message {
   color: #a62020;
   font-size: 0.9rem;
 }
 
 .post-card-vote-message {
+  color: #6a4a00;
+  font-size: 0.9rem;
+}
+
+.post-card-comment-message {
   color: #6a4a00;
   font-size: 0.9rem;
 }

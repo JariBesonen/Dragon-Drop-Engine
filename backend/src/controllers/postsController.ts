@@ -1,6 +1,15 @@
 import fs from "fs";
 import path from "path";
 import type { Request, Response } from "express";
+import {
+  createComment,
+  deleteCommentByOwner,
+  getCommentById,
+  getCommentReferenceById,
+  getPostComments,
+  mapComment,
+  voteOnComment,
+} from "../models/commentsModel";
 import { getHiveById } from "../models/hivesModel";
 import {
   createHivePost,
@@ -152,4 +161,234 @@ export async function like(req: Request, res: Response): Promise<Response> {
 
 export async function dislike(req: Request, res: Response): Promise<Response> {
   return handleVote(req, res, -1);
+}
+
+interface ApiCommentNode {
+  id: number;
+  postId: number;
+  userId: number;
+  parentCommentId: number | null;
+  content: string;
+  createdAt: string;
+  authorUsername: string;
+  authorDisplayName: string;
+  isDeleted: boolean;
+  likeCount: number;
+  dislikeCount: number;
+  userVote: number | null;
+  replies: ApiCommentNode[];
+}
+
+function buildCommentTree(
+  comments: ReturnType<typeof mapComment>[],
+): ApiCommentNode[] {
+  const nodes: ApiCommentNode[] = comments.map((comment) => ({
+    ...comment,
+    replies: [],
+  }));
+
+  const byId = new Map<number, ApiCommentNode>();
+  nodes.forEach((node) => {
+    byId.set(node.id, node);
+  });
+
+  const roots: ApiCommentNode[] = [];
+  nodes.forEach((node) => {
+    if (node.parentCommentId && byId.has(node.parentCommentId)) {
+      byId.get(node.parentCommentId)?.replies.push(node);
+      return;
+    }
+
+    roots.push(node);
+  });
+
+  return roots;
+}
+
+export async function comments(req: Request, res: Response): Promise<Response> {
+  const postId = Number(req.params.id);
+  if (!Number.isInteger(postId) || postId <= 0) {
+    return res.status(400).json({ message: "Invalid post id." });
+  }
+
+  const post = await getPostById(postId, req.session.userId);
+  if (!post) {
+    return res.status(404).json({ message: "Post not found." });
+  }
+
+  const postComments = await getPostComments(postId, req.session.userId);
+  return res.status(200).json({
+    comments: buildCommentTree(postComments.map(mapComment)),
+  });
+}
+
+export async function addComment(
+  req: Request,
+  res: Response,
+): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const postId = Number(req.params.id);
+  if (!Number.isInteger(postId) || postId <= 0) {
+    return res.status(400).json({ message: "Invalid post id." });
+  }
+
+  const post = await getPostById(postId, req.session.userId);
+  if (!post) {
+    return res.status(404).json({ message: "Post not found." });
+  }
+
+  const rawContent = (req.body as { content?: string }).content;
+  const content = typeof rawContent === "string" ? rawContent.trim() : "";
+  if (!content) {
+    return res.status(400).json({ message: "Comment content is required." });
+  }
+
+  const rawParentCommentId = (req.body as { parentCommentId?: unknown })
+    .parentCommentId;
+  const parentCommentId =
+    rawParentCommentId === undefined || rawParentCommentId === null
+      ? null
+      : Number(rawParentCommentId);
+
+  if (parentCommentId !== null) {
+    if (!Number.isInteger(parentCommentId) || parentCommentId <= 0) {
+      return res.status(400).json({ message: "Invalid parent comment id." });
+    }
+
+    const parentComment = await getCommentReferenceById(parentCommentId);
+    if (!parentComment || parentComment.post_id !== postId) {
+      return res.status(400).json({
+        message: "Reply target does not exist on this post.",
+      });
+    }
+  }
+
+  const comment = await createComment(
+    req.session.userId,
+    postId,
+    content,
+    parentCommentId,
+  );
+
+  return res.status(201).json({
+    comment: {
+      ...mapComment(comment),
+      replies: [],
+    },
+  });
+}
+
+async function handleCommentVote(
+  req: Request,
+  res: Response,
+  vote: 1 | -1,
+): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const postId = Number(req.params.id);
+  if (!Number.isInteger(postId) || postId <= 0) {
+    return res.status(400).json({ message: "Invalid post id." });
+  }
+
+  const commentId = Number(req.params.commentId);
+  if (!Number.isInteger(commentId) || commentId <= 0) {
+    return res.status(400).json({ message: "Invalid comment id." });
+  }
+
+  const post = await getPostById(postId, req.session.userId);
+  if (!post) {
+    return res.status(404).json({ message: "Post not found." });
+  }
+
+  const commentReference = await getCommentReferenceById(commentId);
+  if (!commentReference || commentReference.post_id !== postId) {
+    return res.status(404).json({ message: "Comment not found." });
+  }
+
+  if (commentReference.deleted_at !== null) {
+    return res.status(400).json({ message: "Cannot vote on a deleted comment." });
+  }
+
+  const updatedComment = await voteOnComment(
+    req.session.userId,
+    commentId,
+    vote,
+  );
+  if (!updatedComment) {
+    return res.status(404).json({ message: "Comment not found." });
+  }
+
+  return res.status(200).json({
+    comment: {
+      ...mapComment(updatedComment),
+      replies: [],
+    },
+  });
+}
+
+export async function likeComment(
+  req: Request,
+  res: Response,
+): Promise<Response> {
+  return handleCommentVote(req, res, 1);
+}
+
+export async function dislikeComment(
+  req: Request,
+  res: Response,
+): Promise<Response> {
+  return handleCommentVote(req, res, -1);
+}
+
+export async function removeComment(
+  req: Request,
+  res: Response,
+): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const postId = Number(req.params.id);
+  if (!Number.isInteger(postId) || postId <= 0) {
+    return res.status(400).json({ message: "Invalid post id." });
+  }
+
+  const commentId = Number(req.params.commentId);
+  if (!Number.isInteger(commentId) || commentId <= 0) {
+    return res.status(400).json({ message: "Invalid comment id." });
+  }
+
+  const post = await getPostById(postId, req.session.userId);
+  if (!post) {
+    return res.status(404).json({ message: "Post not found." });
+  }
+
+  const commentReference = await getCommentReferenceById(commentId);
+  if (!commentReference || commentReference.post_id !== postId) {
+    return res.status(404).json({ message: "Comment not found." });
+  }
+
+  if (commentReference.user_id !== req.session.userId) {
+    return res
+      .status(403)
+      .json({ message: "You can only delete your own comments." });
+  }
+
+  const deletedComment = await deleteCommentByOwner(commentId, req.session.userId);
+  if (!deletedComment) {
+    return res.status(404).json({ message: "Comment not found." });
+  }
+
+  return res.status(200).json({
+    message: "Comment deleted.",
+    comment: {
+      ...mapComment(deletedComment),
+      replies: [],
+    },
+  });
 }

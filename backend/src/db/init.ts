@@ -88,6 +88,41 @@ export async function initDatabase(): Promise<void> {
   );
 
   await query(
+    `CREATE TABLE IF NOT EXISTS comments (
+      id SERIAL PRIMARY KEY,
+      post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      parent_comment_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
+      content TEXT NOT NULL,
+      deleted_at TIMESTAMP,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );`,
+  );
+
+  await query(`ALTER TABLE comments ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;`);
+
+  await query(
+    `CREATE INDEX IF NOT EXISTS comments_post_id_created_at_idx
+     ON comments (post_id, created_at DESC);`,
+  );
+
+  await query(
+    `CREATE INDEX IF NOT EXISTS comments_parent_comment_id_idx
+     ON comments (parent_comment_id);`,
+  );
+
+  await query(
+    `CREATE TABLE IF NOT EXISTS comment_votes (
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      comment_id INTEGER NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+      vote SMALLINT NOT NULL CHECK (vote IN (-1, 1)),
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, comment_id)
+    );`,
+  );
+
+  await query(
     `CREATE TABLE IF NOT EXISTS hives (
       id SERIAL PRIMARY KEY,
       owner_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

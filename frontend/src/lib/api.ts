@@ -24,6 +24,22 @@ export interface ApiPost {
   userVote: number | null;
 }
 
+export interface ApiComment {
+  id: number;
+  postId: number;
+  userId: number;
+  parentCommentId: number | null;
+  content: string;
+  createdAt: string;
+  authorUsername: string;
+  authorDisplayName: string;
+  isDeleted: boolean;
+  likeCount: number;
+  dislikeCount: number;
+  userVote: number | null;
+  replies: ApiComment[];
+}
+
 export interface ApiHive {
   id: number;
   ownerUserId: number;
@@ -127,6 +143,37 @@ export const api = {
     request<{ post: ApiPost }>(`/api/posts/${id}/dislike`, {
       method: "POST",
     }),
+  getPostComments: (id: number) =>
+    request<{ comments: ApiComment[] }>(`/api/posts/${id}/comments`),
+  createPostComment: (
+    id: number,
+    body: { content: string; parentCommentId?: number },
+  ) =>
+    request<{ comment: ApiComment }>(`/api/posts/${id}/comments`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  likeComment: (postId: number, commentId: number) =>
+    request<{ comment: ApiComment }>(
+      `/api/posts/${postId}/comments/${commentId}/like`,
+      {
+        method: "POST",
+      },
+    ),
+  dislikeComment: (postId: number, commentId: number) =>
+    request<{ comment: ApiComment }>(
+      `/api/posts/${postId}/comments/${commentId}/dislike`,
+      {
+        method: "POST",
+      },
+    ),
+  deleteComment: (postId: number, commentId: number) =>
+    request<{ message: string; comment: ApiComment }>(
+      `/api/posts/${postId}/comments/${commentId}`,
+      {
+        method: "DELETE",
+      },
+    ),
   createHive: (formData: FormData) =>
     request<{ hive: ApiHive }>("/api/hives", {
       method: "POST",
