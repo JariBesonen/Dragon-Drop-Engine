@@ -92,12 +92,29 @@
   font-size: 0.88rem;
 }
 
+.hive-content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  gap: 0.95rem;
+  align-items: start;
+}
+
+.hive-sidebar {
+  position: sticky;
+  top: calc(10vh + 0.4rem);
+}
+
 .hive-description-card,
 .hive-posts-placeholder {
   background: var(--surface-bg);
   border: 1px solid var(--surface-border);
   border-radius: 12px;
   padding: 0.95rem;
+}
+
+.hive-description-card--sidebar {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.16), rgba(0, 0, 0, 0.16)), var(--surface-bg);
 }
 
 .hive-post-list {
@@ -229,5 +246,13 @@
   .hive-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .hive-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hive-sidebar {
+    position: static;
   }
 }

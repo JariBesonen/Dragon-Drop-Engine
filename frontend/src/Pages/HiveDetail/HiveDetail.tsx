@@ -276,23 +276,27 @@ export default function HiveDetail() {
           </div>
         ) : null}
 
-        <article className="hive-description-card">
-          <h3>About</h3>
-          <p>{hive.description}</p>
-        </article>
+        <div className="hive-content-grid">
+          <section className="hive-posts-placeholder hive-main-column">
+            <h3>Posts</h3>
+            {postsLoading ? <p>Loading posts...</p> : null}
+            {!postsLoading && posts.length === 0 ? (
+              <p>Be the first to post in this hive.</p>
+            ) : null}
+            <div className="hive-post-list">
+              {posts.map((post: ApiPost) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+            </div>
+          </section>
 
-        <section className="hive-posts-placeholder">
-          <h3>Posts</h3>
-          {postsLoading ? <p>Loading posts...</p> : null}
-          {!postsLoading && posts.length === 0 ? (
-            <p>Be the first to post in this hive.</p>
-          ) : null}
-          <div className="hive-post-list">
-            {posts.map((post: ApiPost) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-          </div>
-        </section>
+          <aside className="hive-sidebar">
+            <article className="hive-description-card hive-description-card--sidebar">
+              <h3>About</h3>
+              <p>{hive.description}</p>
+            </article>
+          </aside>
+        </div>
       </section>
 
       {isPostModalOpen ? (
