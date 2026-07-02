@@ -43,6 +43,17 @@
   color: var(--muted-text);
 }
 
+.hive-privacy-pill {
+  margin-top: 0.35rem;
+  display: inline-flex;
+  border: 1px solid var(--surface-border);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  color: var(--body-text);
+  background: var(--surface-subtle-bg);
+  font-size: 0.84rem;
+}
+
 .hive-follow-button {
   border: 1px solid #ffd3bf;
   background: #ff5b00;
@@ -60,6 +71,19 @@
   padding: 0.5rem 0.85rem;
 }
 
+.hive-privacy-toggle-button {
+  border: 1px solid var(--surface-border);
+  background: var(--surface-bg);
+  color: var(--body-text);
+  border-radius: 10px;
+  padding: 0.5rem 0.85rem;
+}
+
+.hive-privacy-toggle-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .hive-create-post-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -75,6 +99,72 @@
   background: #edf8ef;
   border: 1px solid #b8dfbf;
   padding: 0.55rem 0.7rem;
+}
+
+.hive-private-note {
+  color: #8d2a2a;
+  border: 1px solid #e3b0b0;
+  background: #fff3f3;
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  margin-top: 0.45rem;
+}
+
+.hive-follow-requests {
+  margin-top: 0.8rem;
+  border-top: 1px solid var(--surface-border);
+  padding-top: 0.65rem;
+}
+
+.hive-follow-requests h4 {
+  margin-bottom: 0.45rem;
+}
+
+.hive-follow-requests ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.hive-follow-requests li {
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  padding: 0.55rem;
+  background: var(--surface-bg);
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.hive-follow-requests li p {
+  color: var(--muted-text);
+  font-size: 0.84rem;
+}
+
+.hive-follow-request-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.hive-follow-request-approve,
+.hive-follow-request-deny {
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid transparent;
+}
+
+.hive-follow-request-approve {
+  background: #1b8c4b;
+  border-color: #1b8c4b;
+  color: #fff;
+}
+
+.hive-follow-request-deny {
+  background: #fff5f5;
+  border-color: #e2b5b5;
+  color: #a62020;
 }
 
 .hive-tags {

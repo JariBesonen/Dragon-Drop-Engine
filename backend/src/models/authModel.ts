@@ -16,6 +16,7 @@ export interface UserRow {
   notify_hive_follows: boolean;
   avatar_url: string | null;
   banner_url: string | null;
+  is_private: boolean;
   created_at: string;
 }
 
@@ -29,6 +30,7 @@ export function sanitizeUser(user: UserRow) {
     themePreference: user.theme_preference,
     avatarUrl: user.avatar_url,
     bannerUrl: user.banner_url,
+    isPrivate: user.is_private,
     notificationPreferences: {
       all: user.notifications_enabled,
       postLikes: user.notify_post_likes,

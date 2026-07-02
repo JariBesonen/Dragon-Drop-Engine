@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import PostCard from "../../Components/PostCard/PostCard";
 import { useAuth } from "../../context/AuthContext";
-import { ApiError, api, type ApiHive, type ApiPost } from "../../lib/api";
+import {
+  ApiError,
+  api,
+  type ApiHive,
+  type ApiHiveFollowRequest,
+  type ApiPost,
+} from "../../lib/api";
 import "./HiveDetail.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -36,8 +42,15 @@ export default function HiveDetail() {
   const [postsLoading, setPostsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [isJoined, setIsJoined] = useState<boolean>(false);
+  const [canViewPosts, setCanViewPosts] = useState<boolean>(true);
+  const [followRequestStatus, setFollowRequestStatus] = useState<
+    "none" | "pending" | "accepted"
+  >("none");
   const [joinMessage, setJoinMessage] = useState<string>("");
   const [isJoining, setIsJoining] = useState<boolean>(false);
+  const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState<boolean>(false);
+  const [followRequests, setFollowRequests] = useState<ApiHiveFollowRequest[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState<boolean>(false);
   const [isPostModalOpen, setIsPostModalOpen] = useState<boolean>(false);
   const [postCaption, setPostCaption] = useState<string>("");
   const [postImageFile, setPostImageFile] = useState<File | null>(null);
@@ -63,14 +76,34 @@ export default function HiveDetail() {
 
         setHive(hiveResponse.hive);
         setIsJoined(hiveResponse.joined);
+        setCanViewPosts(hiveResponse.canViewPosts ?? true);
+        setFollowRequestStatus(hiveResponse.requestStatus ?? "none");
         setPosts(postsResponse.posts);
         setError("");
       } catch (caughtError) {
-        setError(
-          caughtError instanceof Error
-            ? caughtError.message
-            : "Unable to load hive.",
-        );
+        if (caughtError instanceof ApiError && caughtError.status === 403) {
+          try {
+            const hiveResponse = await api.getHive(hiveId);
+            setHive(hiveResponse.hive);
+            setIsJoined(hiveResponse.joined);
+            setCanViewPosts(false);
+            setFollowRequestStatus(hiveResponse.requestStatus ?? "none");
+            setPosts([]);
+            setError("");
+          } catch (fallbackError) {
+            setError(
+              fallbackError instanceof Error
+                ? fallbackError.message
+                : "Unable to load hive.",
+            );
+          }
+        } else {
+          setError(
+            caughtError instanceof Error
+              ? caughtError.message
+              : "Unable to load hive.",
+          );
+        }
       } finally {
         setLoading(false);
         setPostsLoading(false);
@@ -79,6 +112,41 @@ export default function HiveDetail() {
 
     void loadHive();
   }, [id]);
+
+  useEffect(() => {
+    if (!hive || !currentUser || currentUser.id !== hive.ownerUserId) {
+      setFollowRequests([]);
+      return;
+    }
+
+    const hiveId = hive.id;
+
+    let cancelled = false;
+
+    async function loadRequests(): Promise<void> {
+      try {
+        setRequestsLoading(true);
+        const response = await api.getHiveFollowRequests(hiveId);
+        if (!cancelled) {
+          setFollowRequests(response.requests);
+        }
+      } catch {
+        if (!cancelled) {
+          setFollowRequests([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setRequestsLoading(false);
+        }
+      }
+    }
+
+    void loadRequests();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hive, currentUser]);
 
   async function handleJoinHive(): Promise<void> {
     const hiveId = Number(id);
@@ -97,9 +165,24 @@ export default function HiveDetail() {
       setJoinMessage("");
       const response = await api.joinHive(hiveId);
       setIsJoined(response.joined);
-      setJoinMessage(
-        "You joined this hive. Posts from this hive now appear in Home feed.",
-      );
+      const requestStatus = response.requestStatus ?? "none";
+      setFollowRequestStatus(requestStatus);
+
+      if (response.joined) {
+        setCanViewPosts(true);
+        setJoinMessage(
+          "You joined this hive. Posts from this hive now appear in Home feed.",
+        );
+        const postsResponse = await api.getHivePosts(hiveId);
+        setPosts(postsResponse.posts);
+      } else if (requestStatus === "pending") {
+        setCanViewPosts(false);
+        setJoinMessage(
+          "Follow request sent. You can view posts after the hive owner accepts it.",
+        );
+      } else {
+        setJoinMessage(response.message);
+      }
     } catch (caughtError) {
       setJoinMessage(
         caughtError instanceof Error
@@ -108,6 +191,70 @@ export default function HiveDetail() {
       );
     } finally {
       setIsJoining(false);
+    }
+  }
+
+  async function handleTogglePrivacy(): Promise<void> {
+    if (!hive) {
+      return;
+    }
+
+    try {
+      setIsUpdatingPrivacy(true);
+      setJoinMessage("");
+      const response = await api.updateHivePrivacy(hive.id, !hive.isPrivate);
+      setHive(response.hive);
+      setJoinMessage(
+        response.hive.isPrivate
+          ? "Hive is now private. Only joined members can view posts."
+          : "Hive is now public.",
+      );
+    } catch (caughtError) {
+      setJoinMessage(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to update hive privacy.",
+      );
+    } finally {
+      setIsUpdatingPrivacy(false);
+    }
+  }
+
+  async function handleApproveRequest(requestId: number): Promise<void> {
+    if (!hive) {
+      return;
+    }
+
+    try {
+      await api.approveHiveFollowRequest(hive.id, requestId);
+      setFollowRequests((current) =>
+        current.filter((request) => request.id !== requestId),
+      );
+    } catch (caughtError) {
+      setJoinMessage(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to approve follow request.",
+      );
+    }
+  }
+
+  async function handleDenyRequest(requestId: number): Promise<void> {
+    if (!hive) {
+      return;
+    }
+
+    try {
+      await api.denyHiveFollowRequest(hive.id, requestId);
+      setFollowRequests((current) =>
+        current.filter((request) => request.id !== requestId),
+      );
+    } catch (caughtError) {
+      setJoinMessage(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to deny follow request.",
+      );
     }
   }
 
@@ -214,6 +361,7 @@ export default function HiveDetail() {
   }
 
   const bannerSrc = resolveBannerSrc(hive.bannerImage);
+  const isOwner = currentUser?.id === hive.ownerUserId;
 
   return (
     <main className="hive-page">
@@ -233,28 +381,57 @@ export default function HiveDetail() {
               Created by user #{hive.ownerUserId} on{" "}
               {new Date(hive.createdAt).toLocaleDateString()}
             </p>
+            <p className="hive-privacy-pill">
+              {hive.isPrivate ? "Private Hive" : "Public Hive"}
+            </p>
           </div>
           <div className="hive-actions">
             <button
               type="button"
               className="hive-follow-button"
-              disabled={!currentUser || isJoined || isJoining}
+              disabled={
+                !currentUser || isJoined || isJoining || followRequestStatus === "pending"
+              }
               onClick={() => {
                 void handleJoinHive();
               }}
             >
-              {isJoined ? "Joined" : isJoining ? "Joining..." : "Join Hive"}
+              {isJoined
+                ? "Joined"
+                : isJoining
+                  ? "Submitting..."
+                  : followRequestStatus === "pending"
+                    ? "Request Pending"
+                    : hive.isPrivate
+                      ? "Request to Join"
+                      : "Join Hive"}
             </button>
             <button
               type="button"
               className="hive-create-post-button"
-              disabled={!currentUser}
+              disabled={!currentUser || !canViewPosts}
               onClick={() => {
                 setIsPostModalOpen(true);
               }}
             >
               Create Post
             </button>
+            {isOwner ? (
+              <button
+                type="button"
+                className="hive-privacy-toggle-button"
+                disabled={isUpdatingPrivacy}
+                onClick={() => {
+                  void handleTogglePrivacy();
+                }}
+              >
+                {isUpdatingPrivacy
+                  ? "Updating..."
+                  : hive.isPrivate
+                    ? "Set Public"
+                    : "Set Private"}
+              </button>
+            ) : null}
           </div>
         </header>
 
@@ -279,21 +456,70 @@ export default function HiveDetail() {
         <div className="hive-content-grid">
           <section className="hive-posts-placeholder hive-main-column">
             <h3>Posts</h3>
+            {!canViewPosts ? (
+              <p className="hive-private-note">
+                This hive is private. Join to view posts.
+              </p>
+            ) : null}
             {postsLoading ? <p>Loading posts...</p> : null}
-            {!postsLoading && posts.length === 0 ? (
+            {!postsLoading && canViewPosts && posts.length === 0 ? (
               <p>Be the first to post in this hive.</p>
             ) : null}
-            <div className="hive-post-list">
-              {posts.map((post: ApiPost) => (
-                <PostCard key={post.id} post={post} />
-              ))}
-            </div>
+            {canViewPosts ? (
+              <div className="hive-post-list">
+                {posts.map((post: ApiPost) => (
+                  <PostCard key={post.id} post={post} />
+                ))}
+              </div>
+            ) : null}
           </section>
 
           <aside className="hive-sidebar">
             <article className="hive-description-card hive-description-card--sidebar">
               <h3>About</h3>
               <p>{hive.description}</p>
+
+              {isOwner && hive.isPrivate ? (
+                <div className="hive-follow-requests">
+                  <h4>Follow Requests</h4>
+                  {requestsLoading ? (
+                    <p>Loading requests...</p>
+                  ) : followRequests.length === 0 ? (
+                    <p>No pending requests.</p>
+                  ) : (
+                    <ul>
+                      {followRequests.map((request) => (
+                        <li key={request.id}>
+                          <div>
+                            <strong>{request.requesterDisplayName}</strong>
+                            <p>@{request.requesterUsername}</p>
+                          </div>
+                          <div className="hive-follow-request-actions">
+                            <button
+                              type="button"
+                              className="hive-follow-request-approve"
+                              onClick={() => {
+                                void handleApproveRequest(request.id);
+                              }}
+                            >
+                              Approve
+                            </button>
+                            <button
+                              type="button"
+                              className="hive-follow-request-deny"
+                              onClick={() => {
+                                void handleDenyRequest(request.id);
+                              }}
+                            >
+                              Deny
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ) : null}
             </article>
           </aside>
         </div>

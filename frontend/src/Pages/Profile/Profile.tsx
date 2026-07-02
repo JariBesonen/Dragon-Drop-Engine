@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import {
   ApiError,
   api,
+  type ApiFollowRequest,
   type ApiPost,
   type ApiProfileComment,
   type ApiProfileView,
@@ -70,7 +71,14 @@ export default function Profile() {
   const [error, setError] = useState<string>("");
   const [followerCount, setFollowerCount] = useState<number>(0);
   const [isFollowing, setIsFollowing] = useState<boolean>(false);
+  const [followRequestStatus, setFollowRequestStatus] = useState<
+    "none" | "pending" | "accepted"
+  >("none");
   const [isFollowSubmitting, setIsFollowSubmitting] = useState<boolean>(false);
+  const [pendingFollowRequests, setPendingFollowRequests] = useState<
+    ApiFollowRequest[]
+  >([]);
+  const [isRequestsLoading, setIsRequestsLoading] = useState<boolean>(false);
   const [isEditOpen, setIsEditOpen] = useState<boolean>(false);
   const [displayNameDraft, setDisplayNameDraft] = useState<string>("");
   const [bioDraft, setBioDraft] = useState<string>("");
@@ -104,6 +112,7 @@ export default function Profile() {
       setProfile(response);
       setFollowerCount(response.followerCount);
       setIsFollowing(response.isFollowing);
+      setFollowRequestStatus(response.followRequestStatus || "none");
     } catch (caughtError) {
       setError(
         caughtError instanceof Error
@@ -160,6 +169,47 @@ export default function Profile() {
   }, [profile, currentUser?.id]);
 
   useEffect(() => {
+    if (!profile || !currentUser) {
+      setPendingFollowRequests([]);
+      return;
+    }
+
+    const isOwnPrivateProfile =
+      currentUser.id === profile.user.id && profile.user.isPrivate;
+
+    if (!isOwnPrivateProfile) {
+      setPendingFollowRequests([]);
+      return;
+    }
+
+    let isCancelled = false;
+
+    async function loadRequests(): Promise<void> {
+      try {
+        setIsRequestsLoading(true);
+        const response = await api.getFollowRequests();
+        if (!isCancelled) {
+          setPendingFollowRequests(response.requests);
+        }
+      } catch {
+        if (!isCancelled) {
+          setPendingFollowRequests([]);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsRequestsLoading(false);
+        }
+      }
+    }
+
+    void loadRequests();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [profile, currentUser]);
+
+  useEffect(() => {
     return () => {
       if (avatarPreview.startsWith("blob:")) {
         URL.revokeObjectURL(avatarPreview);
@@ -182,12 +232,14 @@ export default function Profile() {
     try {
       setIsFollowSubmitting(true);
       setError("");
-      const response = isFollowing
-        ? await api.unfollowUser(profile.user.username)
-        : await api.followUser(profile.user.username);
+      const response =
+        isFollowing || followRequestStatus === "pending"
+          ? await api.unfollowUser(profile.user.username)
+          : await api.followUser(profile.user.username);
 
       setFollowerCount(response.followerCount);
       setIsFollowing(response.isFollowing);
+      setFollowRequestStatus(response.requestStatus);
     } catch (caughtError) {
       if (caughtError instanceof ApiError) {
         setError(caughtError.message);
@@ -200,6 +252,39 @@ export default function Profile() {
       }
     } finally {
       setIsFollowSubmitting(false);
+    }
+  }
+
+  async function handleApproveFollowRequest(requestId: number): Promise<void> {
+    try {
+      setError("");
+      const response = await api.approveFollowRequest(requestId);
+      setFollowerCount(response.followerCount);
+      setPendingFollowRequests((currentRequests) =>
+        currentRequests.filter((request) => request.id !== requestId),
+      );
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to approve follow request.",
+      );
+    }
+  }
+
+  async function handleDenyFollowRequest(requestId: number): Promise<void> {
+    try {
+      setError("");
+      await api.denyFollowRequest(requestId);
+      setPendingFollowRequests((currentRequests) =>
+        currentRequests.filter((request) => request.id !== requestId),
+      );
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to deny follow request.",
+      );
     }
   }
 
@@ -578,7 +663,16 @@ export default function Profile() {
 
         <div className="profile-content-grid">
           <section className="profile-main-column">
-            {activeTab === "overview" ? (
+            {profile.isLimitedProfile ? (
+              <article className="profile-placeholder-card profile-private-lock-card">
+                <h3>This account is private</h3>
+                <p>
+                  Follow this account to view their posts and comments.
+                </p>
+              </article>
+            ) : null}
+
+            {!profile.isLimitedProfile && activeTab === "overview" ? (
               <div className="profile-feed-list">
                 {overviewItems.length === 0 ? (
                   <p className="profile-note">No activity yet.</p>
@@ -675,7 +769,7 @@ export default function Profile() {
               </div>
             ) : null}
 
-            {activeTab === "posts" ? (
+            {!profile.isLimitedProfile && activeTab === "posts" ? (
               <div className="profile-feed-list">
                 {profile.posts.length === 0 ? (
                   <p className="profile-note">No posts yet.</p>
@@ -758,7 +852,7 @@ export default function Profile() {
               </div>
             ) : null}
 
-            {activeTab === "comments" ? (
+            {!profile.isLimitedProfile && activeTab === "comments" ? (
               <div className="profile-feed-list">
                 {profile.comments.length === 0 ? (
                   <p className="profile-note">No top-level comments yet.</p>
@@ -767,7 +861,7 @@ export default function Profile() {
               </div>
             ) : null}
 
-            {activeTab === "saved" ? (
+            {!profile.isLimitedProfile && activeTab === "saved" ? (
               <article className="profile-placeholder-card">
                 <h3>Saved Posts</h3>
                 <p>
@@ -784,7 +878,11 @@ export default function Profile() {
               {!isOwnProfile && currentUser ? (
                 <button
                   type="button"
-                  className="profile-follow-button"
+                  className={`profile-follow-button ${
+                    followRequestStatus === "pending"
+                      ? "profile-follow-button--pending"
+                      : ""
+                  }`}
                   onClick={() => {
                     void handleFollowToggle();
                   }}
@@ -792,9 +890,13 @@ export default function Profile() {
                 >
                   {isFollowSubmitting
                     ? "Updating..."
-                    : isFollowing
+                    : followRequestStatus === "pending"
+                      ? "Cancel Request"
+                      : isFollowing
                       ? "Unfollow"
-                      : "Follow"}
+                        : profile.user.isPrivate
+                          ? "Request to Follow"
+                          : "Follow"}
                 </button>
               ) : null}
               <p className="profile-stat-line">{followerCount} followers</p>
@@ -820,6 +922,62 @@ export default function Profile() {
                   </ul>
                 )}
               </div>
+
+              {isOwnProfile && profile.user.isPrivate ? (
+                <div className="profile-follow-requests">
+                  <h4>Follow Requests</h4>
+                  {isRequestsLoading ? (
+                    <p className="profile-note">Loading requests...</p>
+                  ) : pendingFollowRequests.length === 0 ? (
+                    <p className="profile-note">No pending requests.</p>
+                  ) : (
+                    <ul>
+                      {pendingFollowRequests.map((request) => {
+                        const requestAvatarSrc = resolveMediaSrc(
+                          request.requesterAvatarUrl,
+                        );
+
+                        return (
+                          <li key={request.id} className="profile-follow-request-item">
+                            <div className="profile-follow-request-header">
+                              {requestAvatarSrc ? (
+                                <img
+                                  src={requestAvatarSrc}
+                                  alt={`${request.requesterDisplayName} avatar`}
+                                />
+                              ) : null}
+                              <div>
+                                <strong>{request.requesterDisplayName}</strong>
+                                <p>@{request.requesterUsername}</p>
+                              </div>
+                            </div>
+                            <div className="profile-follow-request-actions">
+                              <button
+                                type="button"
+                                className="profile-follow-request-approve"
+                                onClick={() => {
+                                  void handleApproveFollowRequest(request.id);
+                                }}
+                              >
+                                Accept
+                              </button>
+                              <button
+                                type="button"
+                                className="profile-follow-request-deny"
+                                onClick={() => {
+                                  void handleDenyFollowRequest(request.id);
+                                }}
+                              >
+                                Deny
+                              </button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              ) : null}
             </article>
           </aside>
         </div>

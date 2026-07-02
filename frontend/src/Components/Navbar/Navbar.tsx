@@ -23,6 +23,8 @@ function formatNotificationMessage(notification: ApiNotification): string {
       return `${actorText} replied to your comment.`;
     case "hive_follow":
       return `${actorText} followed your hive.`;
+    case "hive_follow_accepted":
+      return `${actorText} accepted your request to follow their hive.`;
     default:
       return `${actorText} sent you a notification.`;
   }

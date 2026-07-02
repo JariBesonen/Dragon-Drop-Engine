@@ -4,8 +4,16 @@ import type { Request, Response } from "express";
 import { findUserByUsername } from "../models/authModel";
 import { mapPost } from "../models/postsModel";
 import {
+  approveAllPendingFollowRequestsForRecipient,
+  approveFollowRequestById,
+  canViewerAccessPrivateProfile,
+  cancelPendingFollowRequest,
+  createOrReopenFollowRequest,
+  denyFollowRequestById,
   followUser,
+  getFollowRequestBetweenUsers,
   getFollowerCountByUserId,
+  listIncomingPendingFollowRequests,
   getOwnedHivesByUserId,
   getProfileTopLevelCommentsByUserId,
   getProfilePostsByUserId,
@@ -31,6 +39,7 @@ function mapProfileUser(user: {
   notify_hive_follows: boolean;
   avatar_url: string | null;
   banner_url: string | null;
+  is_private: boolean;
   created_at: string;
 }) {
   return {
@@ -42,6 +51,7 @@ function mapProfileUser(user: {
     themePreference: user.theme_preference,
     avatarUrl: user.avatar_url,
     bannerUrl: user.banner_url,
+    isPrivate: user.is_private,
     notificationPreferences: {
       all: user.notifications_enabled,
       postLikes: user.notify_post_likes,
@@ -52,6 +62,24 @@ function mapProfileUser(user: {
     },
     createdAt: user.created_at,
   };
+}
+
+function parseOptionalBoolean(value: unknown): boolean | undefined {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") {
+      return true;
+    }
+    if (normalized === "false") {
+      return false;
+    }
+  }
+
+  return undefined;
 }
 
 function resolveUsernameParam(
@@ -130,17 +158,52 @@ export async function byUsername(
     return res.status(404).json({ message: "User not found." });
   }
 
-  const [posts, comments, followerCount, ownedHives] = await Promise.all([
-    getProfilePostsByUserId(user.id, req.session.userId),
-    getProfileTopLevelCommentsByUserId(user.id, req.session.userId),
+  const canViewActivity = await canViewerAccessPrivateProfile(
+    req.session.userId,
+    user.id,
+    user.is_private,
+  );
+
+  const isOwnProfile = req.session.userId === user.id;
+
+  let isFollowing = false;
+  if (req.session.userId && !isOwnProfile) {
+    isFollowing = await isFollowingUser(req.session.userId, user.id);
+  }
+
+  const followRequest =
+    req.session.userId && !isOwnProfile
+      ? await getFollowRequestBetweenUsers(req.session.userId, user.id)
+      : null;
+
+  const followRequestStatus = isFollowing
+    ? "accepted"
+    : followRequest?.status === "pending"
+      ? "pending"
+      : "none";
+
+  const [followerCount, ownedHives] = await Promise.all([
     getFollowerCountByUserId(user.id),
     getOwnedHivesByUserId(user.id),
   ]);
 
-  const isFollowing =
-    !!req.session.userId && req.session.userId !== user.id
-      ? await isFollowingUser(req.session.userId, user.id)
-      : false;
+  if (!canViewActivity) {
+    return res.status(200).json({
+      user: mapProfileUser(user),
+      posts: [],
+      comments: [],
+      followerCount,
+      isFollowing,
+      followRequestStatus,
+      ownedHives,
+      isLimitedProfile: true,
+    });
+  }
+
+  const [posts, comments] = await Promise.all([
+    getProfilePostsByUserId(user.id, req.session.userId),
+    getProfileTopLevelCommentsByUserId(user.id, req.session.userId),
+  ]);
 
   return res.status(200).json({
     user: mapProfileUser(user),
@@ -148,7 +211,9 @@ export async function byUsername(
     comments: comments.map(mapProfileComment),
     followerCount,
     isFollowing,
+    followRequestStatus,
     ownedHives,
+    isLimitedProfile: false,
   });
 }
 
@@ -171,6 +236,32 @@ export async function follow(req: Request, res: Response): Promise<Response> {
     return res.status(400).json({ message: "You cannot follow yourself." });
   }
 
+  const alreadyFollowing = await isFollowingUser(req.session.userId, targetUser.id);
+  if (alreadyFollowing) {
+    const followerCount = await getFollowerCountByUserId(targetUser.id);
+    return res.status(200).json({
+      message: "Already following user.",
+      followerCount,
+      isFollowing: true,
+      requestStatus: "accepted",
+    });
+  }
+
+  if (targetUser.is_private) {
+    const request = await createOrReopenFollowRequest(
+      req.session.userId,
+      targetUser.id,
+    );
+    const followerCount = await getFollowerCountByUserId(targetUser.id);
+
+    return res.status(202).json({
+      message: "Follow request sent.",
+      followerCount,
+      isFollowing: false,
+      requestStatus: request.status,
+    });
+  }
+
   await followUser(req.session.userId, targetUser.id);
   const followerCount = await getFollowerCountByUserId(targetUser.id);
 
@@ -178,6 +269,7 @@ export async function follow(req: Request, res: Response): Promise<Response> {
     message: "Followed user.",
     followerCount,
     isFollowing: true,
+    requestStatus: "accepted",
   });
 }
 
@@ -200,6 +292,23 @@ export async function unfollow(req: Request, res: Response): Promise<Response> {
     return res.status(400).json({ message: "You cannot unfollow yourself." });
   }
 
+  const wasFollowing = await isFollowingUser(req.session.userId, targetUser.id);
+
+  if (targetUser.is_private && !wasFollowing) {
+    const canceled = await cancelPendingFollowRequest(
+      req.session.userId,
+      targetUser.id,
+    );
+    const followerCount = await getFollowerCountByUserId(targetUser.id);
+
+    return res.status(200).json({
+      message: canceled ? "Follow request canceled." : "No pending follow request.",
+      followerCount,
+      isFollowing: false,
+      requestStatus: "none",
+    });
+  }
+
   await unfollowUser(req.session.userId, targetUser.id);
   const followerCount = await getFollowerCountByUserId(targetUser.id);
 
@@ -207,6 +316,78 @@ export async function unfollow(req: Request, res: Response): Promise<Response> {
     message: "Unfollowed user.",
     followerCount,
     isFollowing: false,
+    requestStatus: "none",
+  });
+}
+
+export async function getFollowRequests(
+  req: Request,
+  res: Response,
+): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const requests = await listIncomingPendingFollowRequests(req.session.userId);
+  return res.status(200).json({
+    requests: requests.map((request) => ({
+      id: request.id,
+      requesterId: request.requester_id,
+      requesterUsername: request.requester_username,
+      requesterDisplayName: request.requester_display_name,
+      requesterAvatarUrl: request.requester_avatar_url,
+      createdAt: request.created_at,
+    })),
+  });
+}
+
+export async function approveFollowRequest(
+  req: Request,
+  res: Response,
+): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const requestIdParam = resolveUsernameParam(req.params.requestId);
+  const requestId = Number.parseInt(requestIdParam, 10);
+  if (!Number.isInteger(requestId) || requestId <= 0) {
+    return res.status(400).json({ message: "Invalid follow request id." });
+  }
+
+  const approved = await approveFollowRequestById(requestId, req.session.userId);
+  if (!approved) {
+    return res.status(404).json({ message: "Follow request not found." });
+  }
+
+  const followerCount = await getFollowerCountByUserId(req.session.userId);
+  return res.status(200).json({
+    message: "Follow request approved.",
+    followerCount,
+  });
+}
+
+export async function denyFollowRequest(
+  req: Request,
+  res: Response,
+): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const requestIdParam = resolveUsernameParam(req.params.requestId);
+  const requestId = Number.parseInt(requestIdParam, 10);
+  if (!Number.isInteger(requestId) || requestId <= 0) {
+    return res.status(400).json({ message: "Invalid follow request id." });
+  }
+
+  const denied = await denyFollowRequestById(requestId, req.session.userId);
+  if (!denied) {
+    return res.status(404).json({ message: "Follow request not found." });
+  }
+
+  return res.status(200).json({
+    message: "Follow request denied.",
   });
 }
 
@@ -220,7 +401,13 @@ export async function settings(req: Request, res: Response): Promise<Response> {
     bannerImage?: Express.Multer.File[];
   };
 
-  const { username, displayName, bio, themePreference } = req.body as {
+  const {
+    username,
+    displayName,
+    bio,
+    themePreference,
+    isPrivate,
+  } = req.body as {
     notificationPreferences?: {
       all?: boolean;
       postLikes?: boolean;
@@ -233,6 +420,7 @@ export async function settings(req: Request, res: Response): Promise<Response> {
     displayName?: string;
     bio?: string;
     themePreference?: "light" | "dark";
+    isPrivate?: boolean | string;
   };
   const { notificationPreferences } = req.body as {
     notificationPreferences?: {
@@ -261,6 +449,13 @@ export async function settings(req: Request, res: Response): Promise<Response> {
   const nextBannerUrl = bannerFile
     ? `/uploads/users/${bannerFile.filename}`
     : undefined;
+  const parsedIsPrivate = parseOptionalBoolean(isPrivate);
+
+  if (isPrivate !== undefined && parsedIsPrivate === undefined) {
+    return res
+      .status(400)
+      .json({ message: "isPrivate must be a boolean value." });
+  }
 
   if (trimmedUsername) {
     if (!/^[a-zA-Z0-9_]{3,40}$/.test(trimmedUsername)) {
@@ -312,6 +507,7 @@ export async function settings(req: Request, res: Response): Promise<Response> {
     notificationPreferences,
     nextAvatarUrl,
     nextBannerUrl,
+    parsedIsPrivate,
   );
   if (!user) {
     return res.status(404).json({ message: "User not found." });
@@ -339,6 +535,10 @@ export async function settings(req: Request, res: Response): Promise<Response> {
       currentUser.banner_url.replace(/^\//, ""),
     );
     fs.promises.unlink(absoluteBannerPath).catch(() => undefined);
+  }
+
+  if (currentUser.is_private && parsedIsPrivate === false) {
+    await approveAllPendingFollowRequestsForRecipient(req.session.userId);
   }
 
   return res.status(200).json({ user: mapProfileUser(user) });

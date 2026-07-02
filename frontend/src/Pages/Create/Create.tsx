@@ -11,6 +11,7 @@ export default function Create() {
   const [name, setName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [tagsInput, setTagsInput] = useState<string>("");
+  const [isPrivate, setIsPrivate] = useState<boolean>(false);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -56,6 +57,7 @@ export default function Create() {
       const formData = new FormData();
       formData.append("name", name.trim());
       formData.append("description", description.trim());
+      formData.append("isPrivate", String(isPrivate));
 
       if (tags.length > 0) {
         formData.append("tags", tags.join(","));
@@ -183,6 +185,32 @@ export default function Create() {
             }}
             placeholder="gaming, art, technology"
           />
+
+          <fieldset className="create-privacy-fieldset">
+            <legend>Hive Privacy</legend>
+            <label>
+              <input
+                type="radio"
+                name="hive-privacy"
+                checked={!isPrivate}
+                onChange={() => {
+                  setIsPrivate(false);
+                }}
+              />
+              Public (anyone can view posts)
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="hive-privacy"
+                checked={isPrivate}
+                onChange={() => {
+                  setIsPrivate(true);
+                }}
+              />
+              Private (only joined members can view posts)
+            </label>
+          </fieldset>
 
           <button type="submit" disabled={!currentUser || isSubmitting}>
             {isSubmitting ? "Creating..." : "Create Hive"}

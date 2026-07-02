@@ -33,6 +33,9 @@ export default function Settings() {
     useState<NotificationPreferences>(
       currentUser?.notificationPreferences || defaultNotificationPreferences,
     );
+  const [isPrivate, setIsPrivate] = useState<boolean>(
+    currentUser?.isPrivate ?? false,
+  );
   const [settingsMessage, setSettingsMessage] = useState<string>("");
   const [deleteConfirmation, setDeleteConfirmation] = useState<string>("");
   const [deleteMessage, setDeleteMessage] = useState<string>("");
@@ -49,6 +52,7 @@ export default function Settings() {
     setNotificationPreferences(
       currentUser.notificationPreferences || defaultNotificationPreferences,
     );
+    setIsPrivate(currentUser.isPrivate ?? false);
   }, [currentUser]);
 
   useEffect(() => {
@@ -74,6 +78,7 @@ export default function Settings() {
       await api.updateSettings({
         username: trimmedUsername,
         themePreference,
+        isPrivate,
         notificationPreferences,
       });
       await refreshMe();
@@ -266,6 +271,26 @@ export default function Settings() {
                 New followers of your hives
               </label>
             </div>
+          </section>
+
+          <section className="settings-section">
+            <h3>Account Privacy</h3>
+            <p>Choose who can follow your account.</p>
+            <label className="settings-checkbox-row">
+              <input
+                type="checkbox"
+                checked={isPrivate}
+                onChange={(event) => {
+                  setIsPrivate(event.target.checked);
+                }}
+              />
+              Make my account private
+            </label>
+            <p>
+              {isPrivate
+                ? "Followers must request approval before they can follow you."
+                : "Anyone can follow you instantly."}
+            </p>
           </section>
 
           <button type="submit" disabled={isSaving}>

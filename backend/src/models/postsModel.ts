@@ -46,17 +46,37 @@ function postVoteSelect(userVoteExpression: string): string {
 }
 
 export async function getExplorePosts(userId?: number): Promise<PostRow[]> {
+  if (typeof userId === "number") {
+    return query<PostRow>(
+      `SELECT ${postVoteSelect(
+        `COALESCE((SELECT pv.vote FROM post_votes pv WHERE pv.post_id = p.id AND pv.user_id = $1 LIMIT 1), 0)`,
+      )}
+       FROM posts p
+       JOIN users u ON u.id = p.user_id
+       LEFT JOIN hives h ON h.id = p.hive_id
+       WHERE h.id IS NULL
+          OR h.is_private = false
+          OR h.owner_user_id = $1
+          OR EXISTS (
+            SELECT 1
+            FROM hive_memberships hm
+            WHERE hm.hive_id = h.id AND hm.user_id = $1
+          )
+       ORDER BY p.created_at DESC
+       LIMIT 60`,
+      [userId],
+    );
+  }
+
   return query<PostRow>(
-    `SELECT ${postVoteSelect(
-      typeof userId === "number"
-        ? `COALESCE((SELECT pv.vote FROM post_votes pv WHERE pv.post_id = p.id AND pv.user_id = $1 LIMIT 1), 0)`
-        : `0::smallint`,
-    )}
+    `SELECT ${postVoteSelect(`0::smallint`)}
      FROM posts p
      JOIN users u ON u.id = p.user_id
+     LEFT JOIN hives h ON h.id = p.hive_id
+     WHERE h.id IS NULL OR h.is_private = false
      ORDER BY p.created_at DESC
      LIMIT 60`,
-    typeof userId === "number" ? [userId] : [],
+    [],
   );
 }
 
@@ -67,9 +87,16 @@ export async function getHomePosts(userId: number): Promise<PostRow[]> {
     )}
      FROM posts p
      JOIN users u ON u.id = p.user_id
+     LEFT JOIN hives h ON h.id = p.hive_id
      LEFT JOIN follows f ON f.followed_id = p.user_id AND f.follower_id = $1
      LEFT JOIN hive_memberships hm ON hm.hive_id = p.hive_id AND hm.user_id = $1
-     WHERE p.user_id = $1 OR f.follower_id = $1 OR hm.user_id = $1
+     WHERE (p.user_id = $1 OR f.follower_id = $1 OR hm.user_id = $1)
+       AND (
+         h.id IS NULL
+         OR h.is_private = false
+         OR h.owner_user_id = $1
+         OR hm.user_id = $1
+       )
      ORDER BY p.created_at DESC
      LIMIT 60`,
     [userId],
@@ -99,18 +126,39 @@ export async function getPostById(
   id: number,
   userId?: number,
 ): Promise<PostRow | null> {
-  const rows = await query<PostRow>(
-    `SELECT ${postVoteSelect(
-      typeof userId === "number"
-        ? `COALESCE((SELECT pv.vote FROM post_votes pv WHERE pv.post_id = p.id AND pv.user_id = $2 LIMIT 1), 0)`
-        : `0::smallint`,
-    )}
-     FROM posts p
-     JOIN users u ON u.id = p.user_id
-     WHERE p.id = $1
-     LIMIT 1`,
-    typeof userId === "number" ? [id, userId] : [id],
-  );
+  const rows =
+    typeof userId === "number"
+      ? await query<PostRow>(
+          `SELECT ${postVoteSelect(
+            `COALESCE((SELECT pv.vote FROM post_votes pv WHERE pv.post_id = p.id AND pv.user_id = $2 LIMIT 1), 0)`,
+          )}
+           FROM posts p
+           JOIN users u ON u.id = p.user_id
+           LEFT JOIN hives h ON h.id = p.hive_id
+           WHERE p.id = $1
+             AND (
+               h.id IS NULL
+               OR h.is_private = false
+               OR h.owner_user_id = $2
+               OR EXISTS (
+                 SELECT 1
+                 FROM hive_memberships hm
+                 WHERE hm.hive_id = h.id AND hm.user_id = $2
+               )
+             )
+           LIMIT 1`,
+          [id, userId],
+        )
+      : await query<PostRow>(
+          `SELECT ${postVoteSelect(`0::smallint`)}
+           FROM posts p
+           JOIN users u ON u.id = p.user_id
+           LEFT JOIN hives h ON h.id = p.hive_id
+           WHERE p.id = $1
+             AND (h.id IS NULL OR h.is_private = false)
+           LIMIT 1`,
+          [id],
+        );
 
   return rows[0] ?? null;
 }

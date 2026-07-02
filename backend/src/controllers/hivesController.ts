@@ -1,13 +1,37 @@
 import type { Request, Response } from "express";
 import { createNotification } from "../models/notificationsModel.js";
 import {
+  approveHiveFollowRequestById,
+  createOrReopenHiveFollowRequest,
+  denyHiveFollowRequestById,
   createHive,
+  getHiveFollowRequest,
   getHiveById,
   getHivesByOwnerId,
   isUserJoinedHive,
   joinHive,
+  listPendingHiveFollowRequestsForOwner,
   mapHive,
+  updateHivePrivacyByOwner,
 } from "../models/hivesModel";
+
+function parseOptionalBoolean(value: unknown): boolean | undefined {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") {
+      return true;
+    }
+    if (normalized === "false") {
+      return false;
+    }
+  }
+
+  return undefined;
+}
 
 function normalizeTags(rawTags: string[] | string | undefined): string[] {
   if (!rawTags) {
@@ -35,6 +59,7 @@ export async function create(req: Request, res: Response): Promise<Response> {
     description?: string;
     bannerImage?: string;
     tags?: string[] | string;
+    isPrivate?: boolean | string;
   };
 
   const trimmedName = name?.trim();
@@ -47,6 +72,12 @@ export async function create(req: Request, res: Response): Promise<Response> {
   }
 
   const normalizedTags = normalizeTags(tags);
+  const parsedIsPrivate = parseOptionalBoolean((req.body as { isPrivate?: unknown }).isPrivate);
+
+  if ((req.body as { isPrivate?: unknown }).isPrivate !== undefined && parsedIsPrivate === undefined) {
+    return res.status(400).json({ message: "isPrivate must be a boolean value." });
+  }
+
   const uploadedBannerPath = req.file
     ? `/uploads/hives/${req.file.filename}`
     : null;
@@ -60,6 +91,7 @@ export async function create(req: Request, res: Response): Promise<Response> {
       trimmedDescription,
       uploadedBannerPath || fallbackBanner || null,
       normalizedTags,
+      parsedIsPrivate ?? false,
     );
 
     return res.status(201).json({ hive: mapHive(hive) });
@@ -93,7 +125,12 @@ export async function getById(req: Request, res: Response): Promise<Response> {
   }
 
   if (!req.session.userId) {
-    return res.json({ hive: mapHive(hive), joined: false });
+    return res.json({
+      hive: mapHive(hive),
+      joined: false,
+      canViewPosts: hive.is_private ? false : true,
+      requestStatus: "none",
+    });
   }
 
   const joined =
@@ -101,7 +138,23 @@ export async function getById(req: Request, res: Response): Promise<Response> {
       ? true
       : await isUserJoinedHive(req.session.userId, hiveId);
 
-  return res.json({ hive: mapHive(hive), joined });
+  const followRequest =
+    hive.owner_user_id === req.session.userId || joined
+      ? null
+      : await getHiveFollowRequest(hiveId, req.session.userId);
+
+  const requestStatus = joined
+    ? "accepted"
+    : followRequest?.status === "pending"
+      ? "pending"
+      : "none";
+
+  return res.json({
+    hive: mapHive(hive),
+    joined,
+    canViewPosts: !hive.is_private || joined,
+    requestStatus,
+  });
 }
 
 export async function join(req: Request, res: Response): Promise<Response> {
@@ -125,7 +178,24 @@ export async function join(req: Request, res: Response): Promise<Response> {
       : await isUserJoinedHive(req.session.userId, hiveId);
 
   if (alreadyJoined) {
-    return res.status(200).json({ message: "Joined hive.", joined: true });
+    return res.status(200).json({
+      message: "Joined hive.",
+      joined: true,
+      requestStatus: "accepted",
+    });
+  }
+
+  if (hive.is_private) {
+    const request = await createOrReopenHiveFollowRequest(
+      hiveId,
+      req.session.userId,
+    );
+
+    return res.status(202).json({
+      message: "Follow request sent.",
+      joined: false,
+      requestStatus: request.status,
+    });
   }
 
   await joinHive(req.session.userId, hiveId);
@@ -137,5 +207,128 @@ export async function join(req: Request, res: Response): Promise<Response> {
     hiveId,
   });
 
-  return res.status(200).json({ message: "Joined hive.", joined: true });
+  return res.status(200).json({
+    message: "Joined hive.",
+    joined: true,
+    requestStatus: "accepted",
+  });
+}
+
+export async function getFollowRequests(
+  req: Request,
+  res: Response,
+): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const hiveId = Number(req.params.id);
+  if (!Number.isInteger(hiveId) || hiveId <= 0) {
+    return res.status(400).json({ message: "Invalid hive id." });
+  }
+
+  const requests = await listPendingHiveFollowRequestsForOwner(
+    hiveId,
+    req.session.userId,
+  );
+
+  return res.status(200).json({
+    requests: requests.map((request) => ({
+      id: request.id,
+      hiveId: request.hive_id,
+      requesterUserId: request.requester_user_id,
+      requesterUsername: request.requester_username,
+      requesterDisplayName: request.requester_display_name,
+      requesterAvatarUrl: request.requester_avatar_url,
+      createdAt: request.created_at,
+    })),
+  });
+}
+
+export async function approveFollowRequest(
+  req: Request,
+  res: Response,
+): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const requestId = Number(req.params.requestId);
+  if (!Number.isInteger(requestId) || requestId <= 0) {
+    return res.status(400).json({ message: "Invalid request id." });
+  }
+
+  const approved = await approveHiveFollowRequestById(
+    requestId,
+    req.session.userId,
+  );
+  if (!approved) {
+    return res.status(404).json({ message: "Follow request not found." });
+  }
+
+  await createNotification({
+    recipientUserId: approved.requester_user_id,
+    actorUserId: req.session.userId,
+    type: "hive_follow_accepted",
+    hiveId: approved.hive_id,
+  });
+
+  return res.status(200).json({ message: "Follow request approved." });
+}
+
+export async function denyFollowRequest(
+  req: Request,
+  res: Response,
+): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const requestId = Number(req.params.requestId);
+  if (!Number.isInteger(requestId) || requestId <= 0) {
+    return res.status(400).json({ message: "Invalid request id." });
+  }
+
+  const denied = await denyHiveFollowRequestById(requestId, req.session.userId);
+  if (!denied) {
+    return res.status(404).json({ message: "Follow request not found." });
+  }
+
+  return res.status(200).json({ message: "Follow request denied." });
+}
+
+export async function updatePrivacy(
+  req: Request,
+  res: Response,
+): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const hiveId = Number(req.params.id);
+  if (!Number.isInteger(hiveId) || hiveId <= 0) {
+    return res.status(400).json({ message: "Invalid hive id." });
+  }
+
+  const parsedIsPrivate = parseOptionalBoolean(
+    (req.body as { isPrivate?: unknown }).isPrivate,
+  );
+
+  if (parsedIsPrivate === undefined) {
+    return res.status(400).json({ message: "isPrivate must be a boolean value." });
+  }
+
+  const hive = await updateHivePrivacyByOwner(
+    hiveId,
+    req.session.userId,
+    parsedIsPrivate,
+  );
+
+  if (!hive) {
+    return res
+      .status(404)
+      .json({ message: "Hive not found or you are not the owner." });
+  }
+
+  return res.status(200).json({ hive: mapHive(hive) });
 }

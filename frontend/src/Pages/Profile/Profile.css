@@ -294,6 +294,12 @@
   cursor: not-allowed;
 }
 
+.profile-follow-button--pending {
+  border-color: #8a5600;
+  background: #ffd9a8;
+  color: #4a2c00;
+}
+
 .profile-stat-line,
 .profile-bio {
   color: var(--body-text);
@@ -328,6 +334,77 @@
 
 .profile-owned-hives a:hover {
   text-decoration: underline;
+}
+
+.profile-private-lock-card {
+  border-style: dashed;
+}
+
+.profile-follow-requests {
+  border-top: 1px solid var(--surface-border);
+  padding-top: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.profile-follow-requests ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.profile-follow-request-item {
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  padding: 0.5rem;
+  background: var(--surface-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-follow-request-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-follow-request-header img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-follow-request-header p {
+  color: var(--muted-text);
+  font-size: 0.85rem;
+}
+
+.profile-follow-request-actions {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.profile-follow-request-approve,
+.profile-follow-request-deny {
+  border-radius: 999px;
+  padding: 0.24rem 0.68rem;
+  border: 1px solid transparent;
+}
+
+.profile-follow-request-approve {
+  background: #1b8c4b;
+  border-color: #1b8c4b;
+  color: #fff;
+}
+
+.profile-follow-request-deny {
+  background: #fff5f5;
+  border-color: #e2b5b5;
+  color: #a62020;
 }
 
 .profile-edit-backdrop {

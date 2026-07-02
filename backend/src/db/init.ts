@@ -61,6 +61,11 @@ export async function initDatabase(): Promise<void> {
   );
 
   await query(
+    `ALTER TABLE users
+     ADD COLUMN IF NOT EXISTS is_private BOOLEAN NOT NULL DEFAULT false;`,
+  );
+
+  await query(
     `DO $$
      BEGIN
        IF NOT EXISTS (
@@ -114,6 +119,29 @@ export async function initDatabase(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       PRIMARY KEY (follower_id, followed_id)
     );`,
+  );
+
+  await query(
+    `CREATE TABLE IF NOT EXISTS follow_requests (
+      id SERIAL PRIMARY KEY,
+      requester_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      recipient_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      status VARCHAR(10) NOT NULL CHECK (status IN ('pending', 'approved', 'denied')),
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      UNIQUE (requester_id, recipient_id),
+      CHECK (requester_id <> recipient_id)
+    );`,
+  );
+
+  await query(
+    `CREATE INDEX IF NOT EXISTS follow_requests_recipient_status_created_idx
+     ON follow_requests (recipient_id, status, created_at DESC);`,
+  );
+
+  await query(
+    `CREATE INDEX IF NOT EXISTS follow_requests_requester_status_created_idx
+     ON follow_requests (requester_id, status, created_at DESC);`,
   );
 
   await query(
@@ -172,8 +200,14 @@ export async function initDatabase(): Promise<void> {
       description TEXT NOT NULL,
       banner_image TEXT,
       tags TEXT[] NOT NULL DEFAULT '{}',
+      is_private BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     );`,
+  );
+
+  await query(
+    `ALTER TABLE hives
+     ADD COLUMN IF NOT EXISTS is_private BOOLEAN NOT NULL DEFAULT false;`,
   );
 
   await query(
@@ -183,6 +217,23 @@ export async function initDatabase(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       PRIMARY KEY (user_id, hive_id)
     );`,
+  );
+
+  await query(
+    `CREATE TABLE IF NOT EXISTS hive_follow_requests (
+      id SERIAL PRIMARY KEY,
+      hive_id INTEGER NOT NULL REFERENCES hives(id) ON DELETE CASCADE,
+      requester_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      status VARCHAR(10) NOT NULL CHECK (status IN ('pending', 'approved', 'denied')),
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      UNIQUE (hive_id, requester_user_id)
+    );`,
+  );
+
+  await query(
+    `CREATE INDEX IF NOT EXISTS hive_follow_requests_hive_status_created_idx
+     ON hive_follow_requests (hive_id, status, created_at DESC);`,
   );
 
   await query(

@@ -7,6 +7,7 @@ export interface ApiUser {
   themePreference: "light" | "dark";
   avatarUrl: string | null;
   bannerUrl: string | null;
+  isPrivate: boolean;
   notificationPreferences: {
     all: boolean;
     postLikes: boolean;
@@ -78,7 +79,18 @@ export interface ApiProfileView {
   comments: ApiProfileComment[];
   followerCount: number;
   isFollowing: boolean;
+  followRequestStatus: "none" | "pending" | "accepted";
   ownedHives: ApiOwnedHive[];
+  isLimitedProfile?: boolean;
+}
+
+export interface ApiFollowRequest {
+  id: number;
+  requesterId: number;
+  requesterUsername: string;
+  requesterDisplayName: string;
+  requesterAvatarUrl: string | null;
+  createdAt: string;
 }
 
 export type ApiNotificationType =
@@ -87,7 +99,8 @@ export type ApiNotificationType =
   | "post_reply"
   | "comment_like"
   | "comment_reply"
-  | "hive_follow";
+  | "hive_follow"
+  | "hive_follow_accepted";
 
 export interface ApiNotification {
   id: string;
@@ -108,6 +121,7 @@ export interface ApiHive {
   description: string;
   bannerImage: string | null;
   tags: string[];
+  isPrivate: boolean;
   createdAt: string;
 }
 
@@ -119,6 +133,18 @@ export interface ApiSearchResult {
 export interface ApiHiveDetailResult {
   hive: ApiHive;
   joined: boolean;
+  canViewPosts?: boolean;
+  requestStatus?: "none" | "pending" | "accepted";
+}
+
+export interface ApiHiveFollowRequest {
+  id: number;
+  hiveId: number;
+  requesterUserId: number;
+  requesterUsername: string;
+  requesterDisplayName: string;
+  requesterAvatarUrl: string | null;
+  createdAt: string;
 }
 
 export class ApiError extends Error {
@@ -244,9 +270,36 @@ export const api = {
   getMyHives: () => request<{ hives: ApiHive[] }>("/api/hives/me"),
   getHive: (id: number) => request<ApiHiveDetailResult>(`/api/hives/${id}`),
   joinHive: (id: number) =>
-    request<{ message: string; joined: boolean }>(`/api/hives/${id}/join`, {
+    request<{
+      message: string;
+      joined: boolean;
+      requestStatus?: "none" | "pending" | "accepted";
+    }>(`/api/hives/${id}/join`, {
       method: "POST",
     }),
+  updateHivePrivacy: (id: number, isPrivate: boolean) =>
+    request<{ hive: ApiHive }>(`/api/hives/${id}/privacy`, {
+      method: "PATCH",
+      body: JSON.stringify({ isPrivate }),
+    }),
+  getHiveFollowRequests: (id: number) =>
+    request<{ requests: ApiHiveFollowRequest[] }>(
+      `/api/hives/${id}/follow-requests`,
+    ),
+  approveHiveFollowRequest: (hiveId: number, requestId: number) =>
+    request<{ message: string }>(
+      `/api/hives/${hiveId}/follow-requests/${requestId}/approve`,
+      {
+        method: "POST",
+      },
+    ),
+  denyHiveFollowRequest: (hiveId: number, requestId: number) =>
+    request<{ message: string }>(
+      `/api/hives/${hiveId}/follow-requests/${requestId}/deny`,
+      {
+        method: "POST",
+      },
+    ),
   getMyProfile: () =>
     request<{ user: ApiUser; posts: ApiPost[] }>("/api/profile/me"),
   getNotifications: () =>
@@ -260,17 +313,43 @@ export const api = {
   getProfileByUsername: (username: string) =>
     request<ApiProfileView>(`/api/profile/${encodeURIComponent(username)}`),
   followUser: (username: string) =>
-    request<{ message: string; followerCount: number; isFollowing: boolean }>(
+    request<{
+      message: string;
+      followerCount: number;
+      isFollowing: boolean;
+      requestStatus: "none" | "pending" | "accepted";
+    }>(
       `/api/profile/${encodeURIComponent(username)}/follow`,
       {
         method: "POST",
       },
     ),
   unfollowUser: (username: string) =>
-    request<{ message: string; followerCount: number; isFollowing: boolean }>(
+    request<{
+      message: string;
+      followerCount: number;
+      isFollowing: boolean;
+      requestStatus: "none" | "pending" | "accepted";
+    }>(
       `/api/profile/${encodeURIComponent(username)}/follow`,
       {
         method: "DELETE",
+      },
+    ),
+  getFollowRequests: () =>
+    request<{ requests: ApiFollowRequest[] }>("/api/profile/follow-requests"),
+  approveFollowRequest: (requestId: number) =>
+    request<{ message: string; followerCount: number }>(
+      `/api/profile/follow-requests/${requestId}/approve`,
+      {
+        method: "POST",
+      },
+    ),
+  denyFollowRequest: (requestId: number) =>
+    request<{ message: string }>(
+      `/api/profile/follow-requests/${requestId}/deny`,
+      {
+        method: "POST",
       },
     ),
   updateSettings: (
@@ -280,6 +359,7 @@ export const api = {
           displayName?: string;
           bio?: string;
           themePreference?: "light" | "dark";
+          isPrivate?: boolean;
           notificationPreferences?: {
             all?: boolean;
             postLikes?: boolean;

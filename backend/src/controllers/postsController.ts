@@ -10,7 +10,7 @@ import {
   mapComment,
   voteOnComment,
 } from "../models/commentsModel";
-import { getHiveById } from "../models/hivesModel";
+import { getHiveById, isUserJoinedHive } from "../models/hivesModel";
 import { createNotification } from "../models/notificationsModel.js";
 import {
   createHivePost,
@@ -66,6 +66,15 @@ export async function create(req: Request, res: Response): Promise<Response> {
     return res.status(404).json({ message: "Hive not found." });
   }
 
+  if (hive.is_private && hive.owner_user_id !== req.session.userId) {
+    const joined = await isUserJoinedHive(req.session.userId, hiveId);
+    if (!joined) {
+      return res.status(403).json({
+        message: "You must join this private hive before creating posts.",
+      });
+    }
+  }
+
   const imageUrl = req.file ? `/uploads/posts/${req.file.filename}` : null;
 
   const post = await createHivePost(
@@ -91,6 +100,23 @@ export async function hivePosts(
   const hive = await getHiveById(hiveId);
   if (!hive) {
     return res.status(404).json({ message: "Hive not found." });
+  }
+
+  if (hive.is_private) {
+    if (!req.session.userId) {
+      return res.status(403).json({
+        message: "This hive is private. Join to view posts.",
+      });
+    }
+
+    if (hive.owner_user_id !== req.session.userId) {
+      const joined = await isUserJoinedHive(req.session.userId, hiveId);
+      if (!joined) {
+        return res.status(403).json({
+          message: "This hive is private. Join to view posts.",
+        });
+      }
+    }
   }
 
   const posts = await getHivePosts(hiveId, req.session.userId);

@@ -6,7 +6,8 @@ export type NotificationType =
   | "post_reply"
   | "comment_like"
   | "comment_reply"
-  | "hive_follow";
+  | "hive_follow"
+  | "hive_follow_accepted";
 
 interface NotificationRow {
   id: number;
@@ -53,6 +54,7 @@ function buildGroupKey(notification: NotificationRow): string {
     case "comment_reply":
       return `${notification.type}:post:${notification.post_id ?? 0}`;
     case "hive_follow":
+    case "hive_follow_accepted":
       return `${notification.type}:hive:${notification.hive_id ?? 0}`;
     default:
       return `${notification.type}:${notification.id}`;
@@ -119,6 +121,7 @@ function isNotificationTypeEnabled(
     case "comment_like":
       return preferences.notify_comment_likes;
     case "hive_follow":
+    case "hive_follow_accepted":
       return preferences.notify_hive_follows;
     default:
       return true;

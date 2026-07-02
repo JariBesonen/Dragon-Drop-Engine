@@ -15,6 +15,27 @@ export interface ProfileUserRow {
   notify_hive_follows: boolean;
   avatar_url: string | null;
   banner_url: string | null;
+  is_private: boolean;
+  created_at: string;
+}
+
+export type FollowRequestStatus = "pending" | "approved" | "denied";
+
+export interface FollowRequestRow {
+  id: number;
+  requester_id: number;
+  recipient_id: number;
+  status: FollowRequestStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IncomingFollowRequestRow {
+  id: number;
+  requester_id: number;
+  requester_username: string;
+  requester_display_name: string;
+  requester_avatar_url: string | null;
   created_at: string;
 }
 
@@ -28,7 +49,7 @@ interface NotificationPreferencesUpdate {
 }
 
 const profileUserSelect =
-  "id, username, email, display_name, bio, theme_preference, notifications_enabled, notify_post_likes, notify_post_comments, notify_replies, notify_comment_likes, notify_hive_follows, avatar_url, banner_url, created_at";
+  "id, username, email, display_name, bio, theme_preference, notifications_enabled, notify_post_likes, notify_post_comments, notify_replies, notify_comment_likes, notify_hive_follows, avatar_url, banner_url, is_private, created_at";
 
 export interface UserPostRow {
   id: number;
@@ -233,6 +254,156 @@ export async function unfollowUser(
   );
 }
 
+export async function getFollowRequestBetweenUsers(
+  requesterId: number,
+  recipientId: number,
+): Promise<FollowRequestRow | null> {
+  const rows = await query<FollowRequestRow>(
+    `SELECT id, requester_id, recipient_id, status, created_at, updated_at
+     FROM follow_requests
+     WHERE requester_id = $1 AND recipient_id = $2
+     LIMIT 1`,
+    [requesterId, recipientId],
+  );
+
+  return rows[0] || null;
+}
+
+export async function createOrReopenFollowRequest(
+  requesterId: number,
+  recipientId: number,
+): Promise<FollowRequestRow> {
+  const rows = await query<FollowRequestRow>(
+    `INSERT INTO follow_requests (requester_id, recipient_id, status)
+     VALUES ($1, $2, 'pending')
+     ON CONFLICT (requester_id, recipient_id)
+     DO UPDATE
+     SET status = 'pending',
+         updated_at = NOW()
+     RETURNING id, requester_id, recipient_id, status, created_at, updated_at`,
+    [requesterId, recipientId],
+  );
+
+  return rows[0];
+}
+
+export async function cancelPendingFollowRequest(
+  requesterId: number,
+  recipientId: number,
+): Promise<boolean> {
+  const rows = await query<{ id: number }>(
+    `DELETE FROM follow_requests
+     WHERE requester_id = $1
+       AND recipient_id = $2
+       AND status = 'pending'
+     RETURNING id`,
+    [requesterId, recipientId],
+  );
+
+  return rows.length > 0;
+}
+
+export async function listIncomingPendingFollowRequests(
+  recipientId: number,
+): Promise<IncomingFollowRequestRow[]> {
+  return query<IncomingFollowRequestRow>(
+    `SELECT fr.id,
+            fr.requester_id,
+            u.username AS requester_username,
+            u.display_name AS requester_display_name,
+            u.avatar_url AS requester_avatar_url,
+            fr.created_at
+     FROM follow_requests fr
+     JOIN users u ON u.id = fr.requester_id
+     WHERE fr.recipient_id = $1
+       AND fr.status = 'pending'
+     ORDER BY fr.created_at DESC`,
+    [recipientId],
+  );
+}
+
+export async function approveFollowRequestById(
+  requestId: number,
+  recipientId: number,
+): Promise<FollowRequestRow | null> {
+  const rows = await query<FollowRequestRow>(
+    `UPDATE follow_requests
+     SET status = 'approved',
+         updated_at = NOW()
+     WHERE id = $1
+       AND recipient_id = $2
+       AND status = 'pending'
+     RETURNING id, requester_id, recipient_id, status, created_at, updated_at`,
+    [requestId, recipientId],
+  );
+
+  const request = rows[0] || null;
+  if (!request) {
+    return null;
+  }
+
+  await followUser(request.requester_id, request.recipient_id);
+  return request;
+}
+
+export async function denyFollowRequestById(
+  requestId: number,
+  recipientId: number,
+): Promise<FollowRequestRow | null> {
+  const rows = await query<FollowRequestRow>(
+    `UPDATE follow_requests
+     SET status = 'denied',
+         updated_at = NOW()
+     WHERE id = $1
+       AND recipient_id = $2
+       AND status = 'pending'
+     RETURNING id, requester_id, recipient_id, status, created_at, updated_at`,
+    [requestId, recipientId],
+  );
+
+  return rows[0] || null;
+}
+
+export async function approveAllPendingFollowRequestsForRecipient(
+  recipientId: number,
+): Promise<number> {
+  const rows = await query<{ requester_id: number }>(
+    `UPDATE follow_requests
+     SET status = 'approved',
+         updated_at = NOW()
+     WHERE recipient_id = $1
+       AND status = 'pending'
+     RETURNING requester_id`,
+    [recipientId],
+  );
+
+  await Promise.all(
+    rows.map((row) => followUser(row.requester_id, recipientId)),
+  );
+
+  return rows.length;
+}
+
+export async function canViewerAccessPrivateProfile(
+  viewerUserId: number | undefined,
+  profileUserId: number,
+  profileIsPrivate: boolean,
+): Promise<boolean> {
+  if (!profileIsPrivate) {
+    return true;
+  }
+
+  if (!viewerUserId) {
+    return false;
+  }
+
+  if (viewerUserId === profileUserId) {
+    return true;
+  }
+
+  return isFollowingUser(viewerUserId, profileUserId);
+}
+
 export async function updateProfileSettings(
   userId: number,
   username?: string,
@@ -242,6 +413,7 @@ export async function updateProfileSettings(
   notificationPreferences?: NotificationPreferencesUpdate,
   avatarUrl?: string | null,
   bannerUrl?: string | null,
+  isPrivate?: boolean,
 ): Promise<ProfileUserRow | null> {
   const rows = await query<ProfileUserRow>(
     `UPDATE users
@@ -257,6 +429,7 @@ export async function updateProfileSettings(
          notify_hive_follows = COALESCE($11, notify_hive_follows),
          avatar_url = COALESCE($12, avatar_url),
          banner_url = COALESCE($13, banner_url),
+         is_private = COALESCE($14, is_private),
          updated_at = NOW()
      WHERE id = $1
      RETURNING ${profileUserSelect}`,
@@ -274,6 +447,7 @@ export async function updateProfileSettings(
       notificationPreferences?.hiveFollows,
       avatarUrl,
       bannerUrl,
+      isPrivate,
     ],
   );
 

@@ -11,7 +11,7 @@ export async function search(req: Request, res: Response): Promise<Response> {
 
   const term = `%${rawQuery}%`;
   const [searches, hives] = await Promise.all([
-    getSearchSuggestions(term),
+    getSearchSuggestions(term, req.session.userId),
     getSearchHives(term),
   ]);
 
