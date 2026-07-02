@@ -6,9 +6,11 @@ import path from "path";
 const MAX_BANNER_SIZE_BYTES = 2 * 1024 * 1024;
 const HIVE_UPLOAD_DIR = path.resolve(process.cwd(), "uploads", "hives");
 const POST_UPLOAD_DIR = path.resolve(process.cwd(), "uploads", "posts");
+const USER_UPLOAD_DIR = path.resolve(process.cwd(), "uploads", "users");
 
 fs.mkdirSync(HIVE_UPLOAD_DIR, { recursive: true });
 fs.mkdirSync(POST_UPLOAD_DIR, { recursive: true });
+fs.mkdirSync(USER_UPLOAD_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
   destination: (_req, _file, callback) => {
@@ -74,3 +76,30 @@ export const uploadHivePostImage = multer({
   fileFilter: imageOnlyFileFilter,
   limits: { fileSize: MAX_BANNER_SIZE_BYTES },
 }).single("image");
+
+const userStorage = multer.diskStorage({
+  destination: (_req, _file, callback) => {
+    callback(null, USER_UPLOAD_DIR);
+  },
+  filename: (_req, file, callback) => {
+    const extension = path.extname(file.originalname).toLowerCase();
+    const safeBase = path
+      .basename(file.originalname, extension)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 60);
+    const uniqueSuffix = `${Date.now()}-${crypto.randomUUID()}`;
+
+    callback(null, `${safeBase || "user-image"}-${uniqueSuffix}${extension}`);
+  },
+});
+
+export const uploadProfileMedia = multer({
+  storage: userStorage,
+  fileFilter: imageOnlyFileFilter,
+  limits: { fileSize: MAX_BANNER_SIZE_BYTES },
+}).fields([
+  { name: "avatarImage", maxCount: 1 },
+  { name: "bannerImage", maxCount: 1 },
+]);

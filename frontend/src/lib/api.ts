@@ -5,6 +5,8 @@ export interface ApiUser {
   displayName: string;
   bio: string;
   themePreference: "light" | "dark";
+  avatarUrl: string | null;
+  bannerUrl: string | null;
   notificationPreferences: {
     all: boolean;
     postLikes: boolean;
@@ -271,23 +273,27 @@ export const api = {
         method: "DELETE",
       },
     ),
-  updateSettings: (body: {
-    username?: string;
-    displayName?: string;
-    bio?: string;
-    themePreference?: "light" | "dark";
-    notificationPreferences?: {
-      all?: boolean;
-      postLikes?: boolean;
-      postComments?: boolean;
-      replies?: boolean;
-      commentLikes?: boolean;
-      hiveFollows?: boolean;
-    };
-  }) =>
+  updateSettings: (
+    body:
+      | {
+          username?: string;
+          displayName?: string;
+          bio?: string;
+          themePreference?: "light" | "dark";
+          notificationPreferences?: {
+            all?: boolean;
+            postLikes?: boolean;
+            postComments?: boolean;
+            replies?: boolean;
+            commentLikes?: boolean;
+            hiveFollows?: boolean;
+          };
+        }
+      | FormData,
+  ) =>
     request<{ user: ApiUser }>("/api/profile/settings", {
       method: "PATCH",
-      body: JSON.stringify(body),
+      body: body instanceof FormData ? body : JSON.stringify(body),
     }),
   deleteAccount: (body: { confirmation: string }) =>
     request<{ message: string }>("/api/auth/account", {

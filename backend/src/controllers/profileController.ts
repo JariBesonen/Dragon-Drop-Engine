@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import type { Request, Response } from "express";
 import { findUserByUsername } from "../models/authModel";
 import { mapPost } from "../models/postsModel";
@@ -27,6 +29,8 @@ function mapProfileUser(user: {
   notify_replies: boolean;
   notify_comment_likes: boolean;
   notify_hive_follows: boolean;
+  avatar_url: string | null;
+  banner_url: string | null;
   created_at: string;
 }) {
   return {
@@ -36,6 +40,8 @@ function mapProfileUser(user: {
     displayName: user.display_name,
     bio: user.bio,
     themePreference: user.theme_preference,
+    avatarUrl: user.avatar_url,
+    bannerUrl: user.banner_url,
     notificationPreferences: {
       all: user.notifications_enabled,
       postLikes: user.notify_post_likes,
@@ -209,6 +215,11 @@ export async function settings(req: Request, res: Response): Promise<Response> {
     return res.status(401).json({ message: "Not authenticated." });
   }
 
+  const uploadedFiles = (req.files ?? {}) as {
+    avatarImage?: Express.Multer.File[];
+    bannerImage?: Express.Multer.File[];
+  };
+
   const { username, displayName, bio, themePreference } = req.body as {
     notificationPreferences?: {
       all?: boolean;
@@ -242,6 +253,14 @@ export async function settings(req: Request, res: Response): Promise<Response> {
   const trimmedUsername = username?.trim();
   const trimmedDisplayName = displayName?.trim();
   const trimmedBio = bio?.trim();
+  const avatarFile = uploadedFiles.avatarImage?.[0] ?? null;
+  const bannerFile = uploadedFiles.bannerImage?.[0] ?? null;
+  const nextAvatarUrl = avatarFile
+    ? `/uploads/users/${avatarFile.filename}`
+    : undefined;
+  const nextBannerUrl = bannerFile
+    ? `/uploads/users/${bannerFile.filename}`
+    : undefined;
 
   if (trimmedUsername) {
     if (!/^[a-zA-Z0-9_]{3,40}$/.test(trimmedUsername)) {
@@ -291,9 +310,35 @@ export async function settings(req: Request, res: Response): Promise<Response> {
     trimmedBio,
     themePreference,
     notificationPreferences,
+    nextAvatarUrl,
+    nextBannerUrl,
   );
   if (!user) {
     return res.status(404).json({ message: "User not found." });
+  }
+
+  if (
+    nextAvatarUrl &&
+    currentUser.avatar_url &&
+    currentUser.avatar_url !== nextAvatarUrl
+  ) {
+    const absoluteAvatarPath = path.resolve(
+      process.cwd(),
+      currentUser.avatar_url.replace(/^\//, ""),
+    );
+    fs.promises.unlink(absoluteAvatarPath).catch(() => undefined);
+  }
+
+  if (
+    nextBannerUrl &&
+    currentUser.banner_url &&
+    currentUser.banner_url !== nextBannerUrl
+  ) {
+    const absoluteBannerPath = path.resolve(
+      process.cwd(),
+      currentUser.banner_url.replace(/^\//, ""),
+    );
+    fs.promises.unlink(absoluteBannerPath).catch(() => undefined);
   }
 
   return res.status(200).json({ user: mapProfileUser(user) });

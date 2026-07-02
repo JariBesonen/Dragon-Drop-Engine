@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { uploadProfileMedia } from "../middleware/upload";
 import {
   byUsername,
   follow,
@@ -10,7 +11,7 @@ import {
 const profileRouter = Router();
 
 profileRouter.get("/me", me);
-profileRouter.patch("/settings", settings);
+profileRouter.patch("/settings", uploadProfileMedia, settings);
 profileRouter.post("/:username/follow", follow);
 profileRouter.delete("/:username/follow", unfollow);
 profileRouter.get("/:username", byUsername);

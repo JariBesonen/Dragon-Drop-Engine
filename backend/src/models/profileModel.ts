@@ -13,6 +13,8 @@ export interface ProfileUserRow {
   notify_replies: boolean;
   notify_comment_likes: boolean;
   notify_hive_follows: boolean;
+  avatar_url: string | null;
+  banner_url: string | null;
   created_at: string;
 }
 
@@ -26,7 +28,7 @@ interface NotificationPreferencesUpdate {
 }
 
 const profileUserSelect =
-  "id, username, email, display_name, bio, theme_preference, notifications_enabled, notify_post_likes, notify_post_comments, notify_replies, notify_comment_likes, notify_hive_follows, created_at";
+  "id, username, email, display_name, bio, theme_preference, notifications_enabled, notify_post_likes, notify_post_comments, notify_replies, notify_comment_likes, notify_hive_follows, avatar_url, banner_url, created_at";
 
 export interface UserPostRow {
   id: number;
@@ -238,6 +240,8 @@ export async function updateProfileSettings(
   bio?: string,
   themePreference?: "light" | "dark",
   notificationPreferences?: NotificationPreferencesUpdate,
+  avatarUrl?: string | null,
+  bannerUrl?: string | null,
 ): Promise<ProfileUserRow | null> {
   const rows = await query<ProfileUserRow>(
     `UPDATE users
@@ -251,6 +255,8 @@ export async function updateProfileSettings(
          notify_replies = COALESCE($9, notify_replies),
          notify_comment_likes = COALESCE($10, notify_comment_likes),
          notify_hive_follows = COALESCE($11, notify_hive_follows),
+         avatar_url = COALESCE($12, avatar_url),
+         banner_url = COALESCE($13, banner_url),
          updated_at = NOW()
      WHERE id = $1
      RETURNING ${profileUserSelect}`,
@@ -266,6 +272,8 @@ export async function updateProfileSettings(
       notificationPreferences?.replies,
       notificationPreferences?.commentLikes,
       notificationPreferences?.hiveFollows,
+      avatarUrl,
+      bannerUrl,
     ],
   );
 

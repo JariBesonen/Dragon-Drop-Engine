@@ -14,6 +14,8 @@ export interface UserRow {
   notify_replies: boolean;
   notify_comment_likes: boolean;
   notify_hive_follows: boolean;
+  avatar_url: string | null;
+  banner_url: string | null;
   created_at: string;
 }
 
@@ -25,6 +27,8 @@ export function sanitizeUser(user: UserRow) {
     displayName: user.display_name,
     bio: user.bio,
     themePreference: user.theme_preference,
+    avatarUrl: user.avatar_url,
+    bannerUrl: user.banner_url,
     notificationPreferences: {
       all: user.notifications_enabled,
       postLikes: user.notify_post_likes,

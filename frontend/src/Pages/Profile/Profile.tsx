@@ -63,7 +63,7 @@ function formatDate(isoDate: string): string {
 
 export default function Profile() {
   const { username } = useParams<{ username?: string }>();
-  const { currentUser } = useAuth();
+  const { currentUser, refreshMe } = useAuth();
   const [profile, setProfile] = useState<ApiProfileView | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<ProfileTab>("overview");
@@ -71,8 +71,50 @@ export default function Profile() {
   const [followerCount, setFollowerCount] = useState<number>(0);
   const [isFollowing, setIsFollowing] = useState<boolean>(false);
   const [isFollowSubmitting, setIsFollowSubmitting] = useState<boolean>(false);
+  const [isEditOpen, setIsEditOpen] = useState<boolean>(false);
+  const [displayNameDraft, setDisplayNameDraft] = useState<string>("");
+  const [bioDraft, setBioDraft] = useState<string>("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>("");
+  const [bannerPreview, setBannerPreview] = useState<string>("");
+  const [editMessage, setEditMessage] = useState<string>("");
+  const [isSavingProfile, setIsSavingProfile] = useState<boolean>(false);
+  const [isDeletingPostId, setIsDeletingPostId] = useState<number | null>(null);
+  const [isDeletingCommentId, setIsDeletingCommentId] = useState<number | null>(
+    null,
+  );
 
   const resolvedUsername = username ?? currentUser?.username ?? "";
+
+  async function loadProfile(): Promise<void> {
+    if (!resolvedUsername) {
+      setProfile(null);
+      setFollowerCount(0);
+      setIsFollowing(false);
+      setError("");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+      const response = await api.getProfileByUsername(resolvedUsername);
+      setProfile(response);
+      setFollowerCount(response.followerCount);
+      setIsFollowing(response.isFollowing);
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to load profile.",
+      );
+      setProfile(null);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const overviewItems = useMemo(() => {
     if (!profile) {
@@ -105,37 +147,28 @@ export default function Profile() {
   }, [profile]);
 
   useEffect(() => {
-    async function loadProfile(): Promise<void> {
-      if (!resolvedUsername) {
-        setProfile(null);
-        setFollowerCount(0);
-        setIsFollowing(false);
-        setError("");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError("");
-        const response = await api.getProfileByUsername(resolvedUsername);
-        setProfile(response);
-        setFollowerCount(response.followerCount);
-        setIsFollowing(response.isFollowing);
-      } catch (caughtError) {
-        setError(
-          caughtError instanceof Error
-            ? caughtError.message
-            : "Unable to load profile.",
-        );
-        setProfile(null);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     void loadProfile();
   }, [resolvedUsername]);
+
+  useEffect(() => {
+    if (!profile || currentUser?.id !== profile.user.id) {
+      return;
+    }
+
+    setDisplayNameDraft(profile.user.displayName);
+    setBioDraft(profile.user.bio || "");
+  }, [profile, currentUser?.id]);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+      if (bannerPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(bannerPreview);
+      }
+    };
+  }, [avatarPreview, bannerPreview]);
 
   async function handleFollowToggle(): Promise<void> {
     if (!profile || !currentUser) {
@@ -170,24 +203,252 @@ export default function Profile() {
     }
   }
 
+  function clearProfileMediaDrafts(): void {
+    if (avatarPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(avatarPreview);
+    }
+    if (bannerPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(bannerPreview);
+    }
+
+    setAvatarFile(null);
+    setBannerFile(null);
+    setAvatarPreview("");
+    setBannerPreview("");
+  }
+
+  function closeEditModal(): void {
+    setIsEditOpen(false);
+    setEditMessage("");
+    clearProfileMediaDrafts();
+    if (profile) {
+      setDisplayNameDraft(profile.user.displayName);
+      setBioDraft(profile.user.bio || "");
+    }
+  }
+
+  function handleSelectMedia(
+    event: React.ChangeEvent<HTMLInputElement>,
+    kind: "avatar" | "banner",
+  ): void {
+    const file = event.target.files?.[0] ?? null;
+    if (!file) {
+      if (kind === "avatar") {
+        if (avatarPreview.startsWith("blob:")) {
+          URL.revokeObjectURL(avatarPreview);
+        }
+        setAvatarFile(null);
+        setAvatarPreview("");
+      } else {
+        if (bannerPreview.startsWith("blob:")) {
+          URL.revokeObjectURL(bannerPreview);
+        }
+        setBannerFile(null);
+        setBannerPreview("");
+      }
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setEditMessage("Profile images must be image files.");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      setEditMessage("Profile images must be 2MB or smaller.");
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setEditMessage("");
+
+    if (kind === "avatar") {
+      if (avatarPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(avatarPreview);
+      }
+      setAvatarFile(file);
+      setAvatarPreview(previewUrl);
+      return;
+    }
+
+    if (bannerPreview.startsWith("blob:")) {
+      URL.revokeObjectURL(bannerPreview);
+    }
+    setBannerFile(file);
+    setBannerPreview(previewUrl);
+  }
+
+  async function handleSaveProfile(
+    event: React.FormEvent<HTMLFormElement>,
+  ): Promise<void> {
+    event.preventDefault();
+
+    const trimmedDisplayName = displayNameDraft.trim();
+    if (!trimmedDisplayName) {
+      setEditMessage("Display name is required.");
+      return;
+    }
+
+    try {
+      setIsSavingProfile(true);
+      setEditMessage("");
+      const formData = new FormData();
+      formData.append("displayName", trimmedDisplayName);
+      formData.append("bio", bioDraft.trim());
+
+      if (avatarFile) {
+        formData.append("avatarImage", avatarFile);
+      }
+
+      if (bannerFile) {
+        formData.append("bannerImage", bannerFile);
+      }
+
+      await api.updateSettings(formData);
+      await refreshMe();
+      await loadProfile();
+      closeEditModal();
+    } catch (caughtError) {
+      if (caughtError instanceof ApiError) {
+        setEditMessage(caughtError.message);
+      } else {
+        setEditMessage(
+          caughtError instanceof Error
+            ? caughtError.message
+            : "Unable to update profile.",
+        );
+      }
+    } finally {
+      setIsSavingProfile(false);
+    }
+  }
+
+  async function handleDeletePost(postId: number): Promise<void> {
+    const confirmed = window.confirm("Delete this post?");
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setIsDeletingPostId(postId);
+      setError("");
+      await api.deletePost(postId);
+      setProfile((currentProfile) => {
+        if (!currentProfile) {
+          return currentProfile;
+        }
+
+        return {
+          ...currentProfile,
+          posts: currentProfile.posts.filter((post) => post.id !== postId),
+        };
+      });
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to delete post.",
+      );
+    } finally {
+      setIsDeletingPostId(null);
+    }
+  }
+
+  async function handleDeleteComment(
+    comment: ApiProfileComment,
+  ): Promise<void> {
+    const confirmed = window.confirm("Delete this comment?");
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setIsDeletingCommentId(comment.id);
+      setError("");
+      await api.deleteComment(comment.postId, comment.id);
+      setProfile((currentProfile) => {
+        if (!currentProfile) {
+          return currentProfile;
+        }
+
+        return {
+          ...currentProfile,
+          comments: currentProfile.comments.filter(
+            (currentComment) => currentComment.id !== comment.id,
+          ),
+        };
+      });
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to delete comment.",
+      );
+    } finally {
+      setIsDeletingCommentId(null);
+    }
+  }
+
   function renderCommentItem(comment: ApiProfileComment) {
-    return (
-      <Link
-        key={comment.id}
-        to={`/posts/${comment.postId}#comment-${comment.id}`}
-        className="profile-comment-card profile-link-card"
-      >
-        <header>
-          <p className="profile-comment-community">c/{comment.postCommunity}</p>
-          <p className="profile-comment-meta">
-            {formatDate(comment.createdAt)}
+    const isDeletingThisComment = isDeletingCommentId === comment.id;
+
+    if (!isOwnProfile) {
+      return (
+        <Link
+          key={comment.id}
+          to={`/posts/${comment.postId}#comment-${comment.id}`}
+          className="profile-comment-card profile-link-card"
+        >
+          <header>
+            <p className="profile-comment-community">
+              c/{comment.postCommunity}
+            </p>
+            <p className="profile-comment-meta">
+              {formatDate(comment.createdAt)}
+            </p>
+          </header>
+          <h4>{comment.postTitle}</h4>
+          <p className={comment.isDeleted ? "profile-comment-deleted" : ""}>
+            {comment.isDeleted ? "Comment deleted" : comment.content}
           </p>
+        </Link>
+      );
+    }
+
+    return (
+      <article key={comment.id} className="profile-comment-card">
+        <header>
+          <div>
+            <p className="profile-comment-community">
+              c/{comment.postCommunity}
+            </p>
+            <p className="profile-comment-meta">
+              {formatDate(comment.createdAt)}
+            </p>
+          </div>
+          {!comment.isDeleted ? (
+            <button
+              type="button"
+              className="profile-inline-delete-button"
+              disabled={isDeletingThisComment}
+              onClick={() => {
+                void handleDeleteComment(comment);
+              }}
+            >
+              {isDeletingThisComment ? "Deleting..." : "Delete"}
+            </button>
+          ) : null}
         </header>
-        <h4>{comment.postTitle}</h4>
-        <p className={comment.isDeleted ? "profile-comment-deleted" : ""}>
-          {comment.isDeleted ? "Comment deleted" : comment.content}
-        </p>
-      </Link>
+        <Link
+          to={`/posts/${comment.postId}#comment-${comment.id}`}
+          className="profile-link-card-inner"
+        >
+          <h4>{comment.postTitle}</h4>
+          <p className={comment.isDeleted ? "profile-comment-deleted" : ""}>
+            {comment.isDeleted ? "Comment deleted" : comment.content}
+          </p>
+        </Link>
+      </article>
     );
   }
 
@@ -222,13 +483,58 @@ export default function Profile() {
   }
 
   const isOwnProfile = currentUser?.id === profile.user.id;
+  const bannerSrc = resolveMediaSrc(profile.user.bannerUrl);
+  const avatarSrc = resolveMediaSrc(profile.user.avatarUrl);
+  const editAvatarSrc = avatarPreview || avatarSrc;
+  const editBannerSrc = bannerPreview || bannerSrc;
 
   return (
     <main className="profile-page">
       <section className="profile-shell">
         <header className="profile-header">
-          <h2>{profile.user.displayName}</h2>
-          <p>@{profile.user.username}</p>
+          <div
+            className="profile-banner"
+            style={
+              bannerSrc
+                ? {
+                    backgroundImage: `linear-gradient(rgba(0,0,0,0.18), rgba(0,0,0,0.18)), url(${bannerSrc})`,
+                  }
+                : undefined
+            }
+          />
+          <div className="profile-header-body">
+            <div className="profile-header-identity">
+              <div className="profile-avatar-shell">
+                {avatarSrc ? (
+                  <img
+                    className="profile-avatar"
+                    src={avatarSrc}
+                    alt={`${profile.user.displayName} avatar`}
+                  />
+                ) : (
+                  <div className="profile-avatar profile-avatar--placeholder">
+                    {profile.user.displayName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <div>
+                <h2>{profile.user.displayName}</h2>
+                <p>@{profile.user.username}</p>
+              </div>
+            </div>
+            {isOwnProfile ? (
+              <button
+                type="button"
+                className="profile-edit-button"
+                onClick={() => {
+                  setEditMessage("");
+                  setIsEditOpen(true);
+                }}
+              >
+                Edit Profile
+              </button>
+            ) : null}
+          </div>
         </header>
 
         <nav className="profile-tabs" aria-label="Profile sections">
@@ -281,21 +587,70 @@ export default function Profile() {
                   item.kind === "post" ? (
                     (() => {
                       const imageSrc = resolveMediaSrc(item.post.imageUrl);
+                      const isDeletingThisPost =
+                        isDeletingPostId === item.post.id;
+
+                      if (!isOwnProfile) {
+                        return (
+                          <Link
+                            key={`post-${item.post.id}`}
+                            to={`/posts/${item.post.id}`}
+                            className="profile-post-link"
+                          >
+                            <article className="profile-post-card profile-link-card">
+                              <header>
+                                <p className="profile-post-community">
+                                  c/{item.post.community}
+                                </p>
+                                <p className="profile-post-meta">
+                                  {formatDate(item.post.createdAt)}
+                                </p>
+                              </header>
+                              {imageSrc ? (
+                                <img
+                                  className="profile-post-image"
+                                  src={imageSrc}
+                                  alt={item.post.title}
+                                />
+                              ) : null}
+                              <h4>{item.post.title}</h4>
+                              {item.post.content ? (
+                                <p>{item.post.content}</p>
+                              ) : null}
+                            </article>
+                          </Link>
+                        );
+                      }
+
                       return (
-                        <Link
+                        <article
                           key={`post-${item.post.id}`}
-                          to={`/posts/${item.post.id}`}
-                          className="profile-post-link"
+                          className="profile-post-card"
                         >
-                          <article className="profile-post-card profile-link-card">
-                            <header>
+                          <header>
+                            <div>
                               <p className="profile-post-community">
                                 c/{item.post.community}
                               </p>
                               <p className="profile-post-meta">
                                 {formatDate(item.post.createdAt)}
                               </p>
-                            </header>
+                            </div>
+                            <button
+                              type="button"
+                              className="profile-inline-delete-button"
+                              disabled={isDeletingThisPost}
+                              onClick={() => {
+                                void handleDeletePost(item.post.id);
+                              }}
+                            >
+                              {isDeletingThisPost ? "Deleting..." : "Delete"}
+                            </button>
+                          </header>
+                          <Link
+                            to={`/posts/${item.post.id}`}
+                            className="profile-link-card-inner"
+                          >
                             {imageSrc ? (
                               <img
                                 className="profile-post-image"
@@ -307,8 +662,8 @@ export default function Profile() {
                             {item.post.content ? (
                               <p>{item.post.content}</p>
                             ) : null}
-                          </article>
-                        </Link>
+                          </Link>
+                        </article>
                       );
                     })()
                   ) : (
@@ -328,21 +683,64 @@ export default function Profile() {
                 {profile.posts.map((post) =>
                   (() => {
                     const imageSrc = resolveMediaSrc(post.imageUrl);
+                    const isDeletingThisPost = isDeletingPostId === post.id;
+
+                    if (!isOwnProfile) {
+                      return (
+                        <Link
+                          key={post.id}
+                          to={`/posts/${post.id}`}
+                          className="profile-post-link"
+                        >
+                          <article className="profile-post-card profile-link-card">
+                            <header>
+                              <p className="profile-post-community">
+                                c/{post.community}
+                              </p>
+                              <p className="profile-post-meta">
+                                {formatDate(post.createdAt)}
+                              </p>
+                            </header>
+                            {imageSrc ? (
+                              <img
+                                className="profile-post-image"
+                                src={imageSrc}
+                                alt={post.title}
+                              />
+                            ) : null}
+                            <h4>{post.title}</h4>
+                            {post.content ? <p>{post.content}</p> : null}
+                          </article>
+                        </Link>
+                      );
+                    }
+
                     return (
-                      <Link
-                        key={post.id}
-                        to={`/posts/${post.id}`}
-                        className="profile-post-link"
-                      >
-                        <article className="profile-post-card profile-link-card">
-                          <header>
+                      <article key={post.id} className="profile-post-card">
+                        <header>
+                          <div>
                             <p className="profile-post-community">
                               c/{post.community}
                             </p>
                             <p className="profile-post-meta">
                               {formatDate(post.createdAt)}
                             </p>
-                          </header>
+                          </div>
+                          <button
+                            type="button"
+                            className="profile-inline-delete-button"
+                            disabled={isDeletingThisPost}
+                            onClick={() => {
+                              void handleDeletePost(post.id);
+                            }}
+                          >
+                            {isDeletingThisPost ? "Deleting..." : "Delete"}
+                          </button>
+                        </header>
+                        <Link
+                          to={`/posts/${post.id}`}
+                          className="profile-link-card-inner"
+                        >
                           {imageSrc ? (
                             <img
                               className="profile-post-image"
@@ -352,8 +750,8 @@ export default function Profile() {
                           ) : null}
                           <h4>{post.title}</h4>
                           {post.content ? <p>{post.content}</p> : null}
-                        </article>
-                      </Link>
+                        </Link>
+                      </article>
                     );
                   })(),
                 )}
@@ -427,6 +825,109 @@ export default function Profile() {
         </div>
 
         {error ? <p className="profile-error">{error}</p> : null}
+
+        {isEditOpen ? (
+          <div className="profile-edit-backdrop" role="presentation">
+            <div
+              className="profile-edit-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="profile-edit-title"
+            >
+              <div className="profile-edit-header">
+                <h3 id="profile-edit-title">Edit Profile</h3>
+                <button
+                  type="button"
+                  className="profile-edit-close"
+                  onClick={closeEditModal}
+                >
+                  ×
+                </button>
+              </div>
+
+              <form
+                className="profile-edit-form"
+                onSubmit={(event) => {
+                  void handleSaveProfile(event);
+                }}
+              >
+                <label htmlFor="profile-display-name">Display Name</label>
+                <input
+                  id="profile-display-name"
+                  value={displayNameDraft}
+                  onChange={(event) => {
+                    setDisplayNameDraft(event.target.value);
+                  }}
+                />
+
+                <label htmlFor="profile-bio">Description</label>
+                <textarea
+                  id="profile-bio"
+                  rows={4}
+                  value={bioDraft}
+                  onChange={(event) => {
+                    setBioDraft(event.target.value);
+                  }}
+                />
+
+                <label htmlFor="profile-avatar-image">Profile Image</label>
+                <input
+                  id="profile-avatar-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => {
+                    handleSelectMedia(event, "avatar");
+                  }}
+                />
+                {editAvatarSrc ? (
+                  <img
+                    className="profile-edit-avatar-preview"
+                    src={editAvatarSrc}
+                    alt="Avatar preview"
+                  />
+                ) : null}
+
+                <label htmlFor="profile-banner-image">Banner Image</label>
+                <input
+                  id="profile-banner-image"
+                  type="file"
+                  accept="image/*"
+                  onChange={(event) => {
+                    handleSelectMedia(event, "banner");
+                  }}
+                />
+                {editBannerSrc ? (
+                  <img
+                    className="profile-edit-banner-preview"
+                    src={editBannerSrc}
+                    alt="Banner preview"
+                  />
+                ) : null}
+
+                <div className="profile-edit-actions">
+                  <button
+                    type="button"
+                    className="profile-edit-secondary"
+                    onClick={closeEditModal}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="profile-edit-primary"
+                    disabled={isSavingProfile}
+                  >
+                    {isSavingProfile ? "Saving..." : "Save Profile"}
+                  </button>
+                </div>
+              </form>
+
+              {editMessage ? (
+                <p className="profile-edit-message">{editMessage}</p>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
       </section>
     </main>
   );

@@ -319,7 +319,10 @@ export async function addComment(
       });
     }
 
-    if (post.user_id !== req.session.userId && post.user_id !== parentCommentOwnerId) {
+    if (
+      post.user_id !== req.session.userId &&
+      post.user_id !== parentCommentOwnerId
+    ) {
       await createNotification({
         recipientUserId: post.user_id,
         actorUserId: req.session.userId,

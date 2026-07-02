@@ -51,6 +51,16 @@ export async function initDatabase(): Promise<void> {
   );
 
   await query(
+    `ALTER TABLE users
+     ADD COLUMN IF NOT EXISTS avatar_url TEXT;`,
+  );
+
+  await query(
+    `ALTER TABLE users
+     ADD COLUMN IF NOT EXISTS banner_url TEXT;`,
+  );
+
+  await query(
     `DO $$
      BEGIN
        IF NOT EXISTS (
@@ -129,7 +139,9 @@ export async function initDatabase(): Promise<void> {
     );`,
   );
 
-  await query(`ALTER TABLE comments ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;`);
+  await query(
+    `ALTER TABLE comments ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;`,
+  );
 
   await query(
     `CREATE INDEX IF NOT EXISTS comments_post_id_created_at_idx
