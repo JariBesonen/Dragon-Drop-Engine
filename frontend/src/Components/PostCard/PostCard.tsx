@@ -27,7 +27,13 @@ function formatDate(isoDate: string): string {
   return new Date(isoDate).toLocaleString();
 }
 
-export default function PostCard({ post }: { post: ApiPost }) {
+export default function PostCard({
+  post,
+  hideComments = false,
+}: {
+  post: ApiPost;
+  hideComments?: boolean;
+}) {
   const { currentUser } = useAuth();
   const [isDeleted, setIsDeleted] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
@@ -62,8 +68,10 @@ export default function PostCard({ post }: { post: ApiPost }) {
   const [isCommentDeletingForId, setIsCommentDeletingForId] = useState<
     number | null
   >(null);
-  const [collapsedDeletedThreadByCommentId, setCollapsedDeletedThreadByCommentId] =
-    useState<Record<number, boolean>>({});
+  const [
+    collapsedDeletedThreadByCommentId,
+    setCollapsedDeletedThreadByCommentId,
+  ] = useState<Record<number, boolean>>({});
 
   const imageSrc = resolveMediaSrc(post.imageUrl);
   const shouldRenderBody =
@@ -393,7 +401,9 @@ export default function PostCard({ post }: { post: ApiPost }) {
           style={{ marginLeft: `${Math.min(depth, 3) * 1.05}rem` }}
         >
           <div className="post-card-comment-meta">
-            <span>{isDeletedComment ? "[deleted]" : `@${comment.authorUsername}`}</span>
+            <span>
+              {isDeletedComment ? "[deleted]" : `@${comment.authorUsername}`}
+            </span>
             <div className="post-card-comment-meta-actions">
               <small>{formatDate(comment.createdAt)}</small>
               {currentUser?.id === comment.userId && !isDeletedComment ? (
@@ -561,47 +571,55 @@ export default function PostCard({ post }: { post: ApiPost }) {
         >
           Dislike <span>{dislikeCount}</span>
         </button>
-        <button
-          type="button"
-          className="post-card-comment-toggle"
-          onClick={() => {
-            void handleToggleComments();
-          }}
-        >
-          {isCommentsOpen ? "Hide Comments" : "Show Comments"}
-        </button>
+        {hideComments ? null : (
+          <button
+            type="button"
+            className="post-card-comment-toggle"
+            onClick={() => {
+              void handleToggleComments();
+            }}
+          >
+            {isCommentsOpen ? "Hide Comments" : "Show Comments"}
+          </button>
+        )}
       </div>
 
-      <div className="post-card-comment-form">
-        <textarea
-          rows={2}
-          value={commentDraft}
-          placeholder={currentUser ? "Write a comment" : "Log in to comment"}
-          onChange={(event) => {
-            setCommentDraft(event.target.value);
-          }}
-          disabled={!currentUser || isCommentSubmitting}
-        />
-        <button
-          type="button"
-          onClick={() => {
-            void handleCreateComment();
-          }}
-          disabled={!currentUser || isCommentSubmitting}
-        >
-          {isCommentSubmitting ? "Posting..." : "Comment"}
-        </button>
-      </div>
+      {hideComments ? null : (
+        <>
+          <div className="post-card-comment-form">
+            <textarea
+              rows={2}
+              value={commentDraft}
+              placeholder={
+                currentUser ? "Write a comment" : "Log in to comment"
+              }
+              onChange={(event) => {
+                setCommentDraft(event.target.value);
+              }}
+              disabled={!currentUser || isCommentSubmitting}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                void handleCreateComment();
+              }}
+              disabled={!currentUser || isCommentSubmitting}
+            >
+              {isCommentSubmitting ? "Posting..." : "Comment"}
+            </button>
+          </div>
 
-      {isCommentsOpen ? (
-        <section className="post-card-comments-section">
-          {isCommentsLoading ? <p>Loading comments...</p> : null}
-          {!isCommentsLoading && comments.length === 0 ? (
-            <p>Be the first to comment.</p>
+          {isCommentsOpen ? (
+            <section className="post-card-comments-section">
+              {isCommentsLoading ? <p>Loading comments...</p> : null}
+              {!isCommentsLoading && comments.length === 0 ? (
+                <p>Be the first to comment.</p>
+              ) : null}
+              {!isCommentsLoading ? renderComments(comments) : null}
+            </section>
           ) : null}
-          {!isCommentsLoading ? renderComments(comments) : null}
-        </section>
-      ) : null}
+        </>
+      )}
 
       <small>{formatDate(post.createdAt)}</small>
       {deleteMessage ? (

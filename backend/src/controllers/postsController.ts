@@ -11,6 +11,7 @@ import {
   voteOnComment,
 } from "../models/commentsModel";
 import { getHiveById } from "../models/hivesModel";
+import { createNotification } from "../models/notificationsModel.js";
 import {
   createHivePost,
   deletePostByOwner,
@@ -133,6 +134,20 @@ export async function remove(req: Request, res: Response): Promise<Response> {
   return res.status(200).json({ message: "Post deleted." });
 }
 
+export async function getById(req: Request, res: Response): Promise<Response> {
+  const postId = Number(req.params.id);
+  if (!Number.isInteger(postId) || postId <= 0) {
+    return res.status(400).json({ message: "Invalid post id." });
+  }
+
+  const post = await getPostById(postId, req.session.userId);
+  if (!post) {
+    return res.status(404).json({ message: "Post not found." });
+  }
+
+  return res.status(200).json({ post: mapPost(post) });
+}
+
 async function handleVote(
   req: Request,
   res: Response,
@@ -150,6 +165,15 @@ async function handleVote(
   const updatedPost = await voteOnPost(req.session.userId, postId, vote);
   if (!updatedPost) {
     return res.status(404).json({ message: "Post not found." });
+  }
+
+  if (vote === 1 && updatedPost.user_vote === 1) {
+    await createNotification({
+      recipientUserId: updatedPost.user_id,
+      actorUserId: req.session.userId,
+      type: "post_like",
+      postId,
+    });
   }
 
   return res.status(200).json({ post: mapPost(updatedPost) });
@@ -273,6 +297,39 @@ export async function addComment(
     parentCommentId,
   );
 
+  if (parentCommentId === null) {
+    await createNotification({
+      recipientUserId: post.user_id,
+      actorUserId: req.session.userId,
+      type: "post_comment",
+      postId,
+      commentId: comment.id,
+    });
+  } else {
+    const parentComment = await getCommentReferenceById(parentCommentId);
+    const parentCommentOwnerId = parentComment?.user_id ?? null;
+
+    if (parentComment && parentCommentOwnerId !== null) {
+      await createNotification({
+        recipientUserId: parentCommentOwnerId,
+        actorUserId: req.session.userId,
+        type: "comment_reply",
+        postId,
+        commentId: comment.id,
+      });
+    }
+
+    if (post.user_id !== req.session.userId && post.user_id !== parentCommentOwnerId) {
+      await createNotification({
+        recipientUserId: post.user_id,
+        actorUserId: req.session.userId,
+        type: "post_reply",
+        postId,
+        commentId: comment.id,
+      });
+    }
+  }
+
   return res.status(201).json({
     comment: {
       ...mapComment(comment),
@@ -311,7 +368,9 @@ async function handleCommentVote(
   }
 
   if (commentReference.deleted_at !== null) {
-    return res.status(400).json({ message: "Cannot vote on a deleted comment." });
+    return res
+      .status(400)
+      .json({ message: "Cannot vote on a deleted comment." });
   }
 
   const updatedComment = await voteOnComment(
@@ -321,6 +380,16 @@ async function handleCommentVote(
   );
   if (!updatedComment) {
     return res.status(404).json({ message: "Comment not found." });
+  }
+
+  if (vote === 1 && updatedComment.user_vote === 1) {
+    await createNotification({
+      recipientUserId: updatedComment.user_id,
+      actorUserId: req.session.userId,
+      type: "comment_like",
+      postId,
+      commentId,
+    });
   }
 
   return res.status(200).json({
@@ -379,7 +448,10 @@ export async function removeComment(
       .json({ message: "You can only delete your own comments." });
   }
 
-  const deletedComment = await deleteCommentByOwner(commentId, req.session.userId);
+  const deletedComment = await deleteCommentByOwner(
+    commentId,
+    req.session.userId,
+  );
   if (!deletedComment) {
     return res.status(404).json({ message: "Comment not found." });
   }

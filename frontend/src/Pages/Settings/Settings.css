@@ -58,6 +58,23 @@
   color: var(--body-text);
 }
 
+.settings-checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.settings-checkbox-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--body-text);
+}
+
+.settings-checkbox-row input[type="checkbox"]:disabled + * {
+  opacity: 0.7;
+}
+
 .settings-form input,
 .settings-form textarea {
   border: 1px solid var(--surface-border);

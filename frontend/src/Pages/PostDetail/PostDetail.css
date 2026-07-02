@@ -1,0 +1,76 @@
+.post-detail-page {
+  margin-top: calc(var(--top-nav-height) + 2rem);
+  min-height: 90vh;
+  background: var(--page-bg);
+  padding: 1.2rem;
+}
+
+.post-detail-shell {
+  width: min(920px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.post-detail-back-link {
+  color: var(--muted-text);
+}
+
+.post-detail-note {
+  color: var(--muted-text);
+}
+
+.post-detail-error {
+  color: #a62020;
+}
+
+.post-detail-comments {
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  background: var(--surface-bg);
+  padding: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.post-detail-comments h3 {
+  color: var(--heading-color);
+}
+
+.post-detail-comment {
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  background: var(--surface-subtle-bg);
+  padding: 0.8rem;
+}
+
+.post-detail-comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted-text);
+  margin-bottom: 0.45rem;
+}
+
+.post-detail-comment-deleted {
+  color: var(--muted-text);
+  font-style: italic;
+}
+
+.post-detail-comment-children {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.7rem;
+  padding-left: 1rem;
+  border-left: 1px solid var(--surface-border);
+}
+
+.post-detail-comment-thread-note {
+  display: inline-block;
+  margin-top: 0.55rem;
+  color: var(--muted-text);
+}

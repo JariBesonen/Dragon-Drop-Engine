@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { createNotification } from "../models/notificationsModel.js";
 import {
   createHive,
   getHiveById,
@@ -118,6 +119,23 @@ export async function join(req: Request, res: Response): Promise<Response> {
     return res.status(404).json({ message: "Hive not found." });
   }
 
+  const alreadyJoined =
+    hive.owner_user_id === req.session.userId
+      ? true
+      : await isUserJoinedHive(req.session.userId, hiveId);
+
+  if (alreadyJoined) {
+    return res.status(200).json({ message: "Joined hive.", joined: true });
+  }
+
   await joinHive(req.session.userId, hiveId);
+
+  await createNotification({
+    recipientUserId: hive.owner_user_id,
+    actorUserId: req.session.userId,
+    type: "hive_follow",
+    hiveId,
+  });
+
   return res.status(200).json({ message: "Joined hive.", joined: true });
 }

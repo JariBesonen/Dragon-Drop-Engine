@@ -21,6 +21,36 @@ export async function initDatabase(): Promise<void> {
   );
 
   await query(
+    `ALTER TABLE users
+     ADD COLUMN IF NOT EXISTS notifications_enabled BOOLEAN NOT NULL DEFAULT true;`,
+  );
+
+  await query(
+    `ALTER TABLE users
+     ADD COLUMN IF NOT EXISTS notify_post_likes BOOLEAN NOT NULL DEFAULT true;`,
+  );
+
+  await query(
+    `ALTER TABLE users
+     ADD COLUMN IF NOT EXISTS notify_post_comments BOOLEAN NOT NULL DEFAULT true;`,
+  );
+
+  await query(
+    `ALTER TABLE users
+     ADD COLUMN IF NOT EXISTS notify_replies BOOLEAN NOT NULL DEFAULT true;`,
+  );
+
+  await query(
+    `ALTER TABLE users
+     ADD COLUMN IF NOT EXISTS notify_comment_likes BOOLEAN NOT NULL DEFAULT true;`,
+  );
+
+  await query(
+    `ALTER TABLE users
+     ADD COLUMN IF NOT EXISTS notify_hive_follows BOOLEAN NOT NULL DEFAULT true;`,
+  );
+
+  await query(
     `DO $$
      BEGIN
        IF NOT EXISTS (
@@ -141,5 +171,29 @@ export async function initDatabase(): Promise<void> {
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       PRIMARY KEY (user_id, hive_id)
     );`,
+  );
+
+  await query(
+    `CREATE TABLE IF NOT EXISTS notifications (
+      id SERIAL PRIMARY KEY,
+      recipient_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      actor_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      type VARCHAR(32) NOT NULL,
+      post_id INTEGER REFERENCES posts(id) ON DELETE CASCADE,
+      comment_id INTEGER REFERENCES comments(id) ON DELETE CASCADE,
+      hive_id INTEGER REFERENCES hives(id) ON DELETE CASCADE,
+      read_at TIMESTAMP,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );`,
+  );
+
+  await query(
+    `CREATE INDEX IF NOT EXISTS notifications_recipient_created_idx
+     ON notifications (recipient_user_id, created_at DESC);`,
+  );
+
+  await query(
+    `CREATE INDEX IF NOT EXISTS notifications_recipient_read_idx
+     ON notifications (recipient_user_id, read_at);`,
   );
 }

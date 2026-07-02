@@ -5,6 +5,14 @@ export interface ApiUser {
   displayName: string;
   bio: string;
   themePreference: "light" | "dark";
+  notificationPreferences: {
+    all: boolean;
+    postLikes: boolean;
+    postComments: boolean;
+    replies: boolean;
+    commentLikes: boolean;
+    hiveFollows: boolean;
+  };
   createdAt: string;
 }
 
@@ -38,6 +46,57 @@ export interface ApiComment {
   dislikeCount: number;
   userVote: number | null;
   replies: ApiComment[];
+}
+
+export interface ApiProfileComment {
+  id: number;
+  postId: number;
+  userId: number;
+  parentCommentId: number | null;
+  content: string;
+  isDeleted: boolean;
+  createdAt: string;
+  authorUsername: string;
+  authorDisplayName: string;
+  likeCount: number;
+  dislikeCount: number;
+  userVote: number | null;
+  postTitle: string;
+  postCommunity: string;
+}
+
+export interface ApiOwnedHive {
+  id: number;
+  name: string;
+}
+
+export interface ApiProfileView {
+  user: ApiUser;
+  posts: ApiPost[];
+  comments: ApiProfileComment[];
+  followerCount: number;
+  isFollowing: boolean;
+  ownedHives: ApiOwnedHive[];
+}
+
+export type ApiNotificationType =
+  | "post_like"
+  | "post_comment"
+  | "post_reply"
+  | "comment_like"
+  | "comment_reply"
+  | "hive_follow";
+
+export interface ApiNotification {
+  id: string;
+  type: ApiNotificationType;
+  postId: number | null;
+  commentId: number | null;
+  hiveId: number | null;
+  actorUsernames: string[];
+  count: number;
+  createdAt: string;
+  read: boolean;
 }
 
 export interface ApiHive {
@@ -126,6 +185,7 @@ export const api = {
     }),
   getHivePosts: (id: number) =>
     request<{ posts: ApiPost[] }>(`/api/hives/${id}/posts`),
+  getPostById: (id: number) => request<{ post: ApiPost }>(`/api/posts/${id}`),
   createHivePost: (id: number, formData: FormData) =>
     request<{ post: ApiPost }>(`/api/hives/${id}/posts`, {
       method: "POST",
@@ -187,11 +247,43 @@ export const api = {
     }),
   getMyProfile: () =>
     request<{ user: ApiUser; posts: ApiPost[] }>("/api/profile/me"),
+  getNotifications: () =>
+    request<{ notifications: ApiNotification[]; unreadCount: number }>(
+      "/api/notifications",
+    ),
+  markNotificationsRead: () =>
+    request<{ message: string }>("/api/notifications/read", {
+      method: "POST",
+    }),
+  getProfileByUsername: (username: string) =>
+    request<ApiProfileView>(`/api/profile/${encodeURIComponent(username)}`),
+  followUser: (username: string) =>
+    request<{ message: string; followerCount: number; isFollowing: boolean }>(
+      `/api/profile/${encodeURIComponent(username)}/follow`,
+      {
+        method: "POST",
+      },
+    ),
+  unfollowUser: (username: string) =>
+    request<{ message: string; followerCount: number; isFollowing: boolean }>(
+      `/api/profile/${encodeURIComponent(username)}/follow`,
+      {
+        method: "DELETE",
+      },
+    ),
   updateSettings: (body: {
     username?: string;
     displayName?: string;
     bio?: string;
     themePreference?: "light" | "dark";
+    notificationPreferences?: {
+      all?: boolean;
+      postLikes?: boolean;
+      postComments?: boolean;
+      replies?: boolean;
+      commentLikes?: boolean;
+      hiveFollows?: boolean;
+    };
   }) =>
     request<{ user: ApiUser }>("/api/profile/settings", {
       method: "PATCH",

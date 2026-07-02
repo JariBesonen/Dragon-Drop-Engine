@@ -8,6 +8,12 @@ export interface UserRow {
   display_name: string;
   bio: string;
   theme_preference: "light" | "dark";
+  notifications_enabled: boolean;
+  notify_post_likes: boolean;
+  notify_post_comments: boolean;
+  notify_replies: boolean;
+  notify_comment_likes: boolean;
+  notify_hive_follows: boolean;
   created_at: string;
 }
 
@@ -19,6 +25,14 @@ export function sanitizeUser(user: UserRow) {
     displayName: user.display_name,
     bio: user.bio,
     themePreference: user.theme_preference,
+    notificationPreferences: {
+      all: user.notifications_enabled,
+      postLikes: user.notify_post_likes,
+      postComments: user.notify_post_comments,
+      replies: user.notify_replies,
+      commentLikes: user.notify_comment_likes,
+      hiveFollows: user.notify_hive_follows,
+    },
     createdAt: user.created_at,
   };
 }

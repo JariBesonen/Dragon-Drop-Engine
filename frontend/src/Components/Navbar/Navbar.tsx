@@ -1,8 +1,48 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { api, type ApiHive } from "../../lib/api";
+import { api, type ApiHive, type ApiNotification } from "../../lib/api";
 import "./Navbar.css";
+
+function formatNotificationMessage(notification: ApiNotification): string {
+  const actorText =
+    notification.actorUsernames.length === 1
+      ? `@${notification.actorUsernames[0]}`
+      : `@${notification.actorUsernames[0]} and ${notification.count - 1} others`;
+
+  switch (notification.type) {
+    case "post_like":
+      return `${actorText} liked your post.`;
+    case "post_comment":
+      return `${actorText} commented on your post.`;
+    case "post_reply":
+      return `${actorText} replied in your post.`;
+    case "comment_like":
+      return `${actorText} liked your comment.`;
+    case "comment_reply":
+      return `${actorText} replied to your comment.`;
+    case "hive_follow":
+      return `${actorText} followed your hive.`;
+    default:
+      return `${actorText} sent you a notification.`;
+  }
+}
+
+function resolveNotificationTarget(notification: ApiNotification): string {
+  if (notification.hiveId) {
+    return `/hive/${notification.hiveId}`;
+  }
+
+  if (notification.postId && notification.commentId) {
+    return `/posts/${notification.postId}#comment-${notification.commentId}`;
+  }
+
+  if (notification.postId) {
+    return `/posts/${notification.postId}`;
+  }
+
+  return "/profile";
+}
 
 function Navbar() {
   const navigate = useNavigate();
@@ -14,6 +54,11 @@ function Navbar() {
     searches: string[];
     hives: ApiHive[];
   }>({ searches: [], hives: [] });
+  const [notificationsOpen, setNotificationsOpen] = useState<boolean>(false);
+  const [notifications, setNotifications] = useState<ApiNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [notificationsLoading, setNotificationsLoading] =
+    useState<boolean>(false);
 
   useEffect(() => {
     const query = searchQuery.trim();
@@ -49,6 +94,30 @@ function Navbar() {
     };
   }, [searchQuery]);
 
+  useEffect(() => {
+    async function loadNotifications(): Promise<void> {
+      if (!currentUser) {
+        setNotifications([]);
+        setUnreadCount(0);
+        return;
+      }
+
+      try {
+        setNotificationsLoading(true);
+        const response = await api.getNotifications();
+        setNotifications(response.notifications);
+        setUnreadCount(response.unreadCount);
+      } catch {
+        setNotifications([]);
+        setUnreadCount(0);
+      } finally {
+        setNotificationsLoading(false);
+      }
+    }
+
+    void loadNotifications();
+  }, [currentUser]);
+
   const trimmedQuery = searchQuery.trim();
   const showSearchDropdown = searchOpen && trimmedQuery.length > 0;
 
@@ -71,6 +140,37 @@ function Navbar() {
 
   async function handleLogout(): Promise<void> {
     await logout();
+  }
+
+  async function handleToggleNotifications(): Promise<void> {
+    const nextOpen = !notificationsOpen;
+    setNotificationsOpen(nextOpen);
+
+    if (!nextOpen || !currentUser) {
+      return;
+    }
+
+    try {
+      setNotificationsLoading(true);
+      const response = await api.getNotifications();
+      setNotifications(response.notifications);
+      setUnreadCount(response.unreadCount);
+
+      if (response.unreadCount > 0) {
+        await api.markNotificationsRead();
+        setUnreadCount(0);
+        setNotifications((current) =>
+          current.map((notification) => ({
+            ...notification,
+            read: true,
+          })),
+        );
+      }
+    } catch {
+      setNotifications([]);
+    } finally {
+      setNotificationsLoading(false);
+    }
   }
 
   return (
@@ -173,6 +273,54 @@ function Navbar() {
           <li>
             <Link to="/create">create hive</Link>
           </li>
+          {currentUser ? (
+            <li className="nav-notifications-item">
+              <button
+                type="button"
+                className="nav-bell-button"
+                aria-label="Notifications"
+                onClick={() => {
+                  void handleToggleNotifications();
+                }}
+              >
+                <span aria-hidden="true">🔔</span>
+                {unreadCount > 0 ? (
+                  <span className="nav-bell-badge">{unreadCount}</span>
+                ) : null}
+              </button>
+              {notificationsOpen ? (
+                <div className="nav-notifications-dropdown">
+                  <h2>Notifications</h2>
+                  {notificationsLoading ? (
+                    <p className="nav-search-state">Loading...</p>
+                  ) : null}
+                  {!notificationsLoading && notifications.length === 0 ? (
+                    <p className="nav-search-state">No notifications yet.</p>
+                  ) : null}
+                  <div className="nav-search-results-list">
+                    {notifications.map((notification) => (
+                      <Link
+                        key={notification.id}
+                        className="nav-search-result nav-notification-link"
+                        to={resolveNotificationTarget(notification)}
+                        onClick={() => {
+                          setNotificationsOpen(false);
+                        }}
+                      >
+                        <span className="nav-search-icon">•</span>
+                        <span>
+                          <strong>{formatNotificationMessage(notification)}</strong>
+                          <small>
+                            {new Date(notification.createdAt).toLocaleString()}
+                          </small>
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </li>
+          ) : null}
           <li>
             <Link to="/profile">profile</Link>
           </li>

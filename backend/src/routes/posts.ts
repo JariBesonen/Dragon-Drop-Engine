@@ -7,6 +7,7 @@ import {
   dislike,
   explore,
   home,
+  getById,
   like,
   likeComment,
   removeComment,
@@ -18,6 +19,7 @@ const postsRouter = Router();
 
 postsRouter.get("/explore", explore);
 postsRouter.get("/home", home);
+postsRouter.get("/:id", getById);
 postsRouter.get("/:id/comments", comments);
 postsRouter.post("/:id/comments", addComment);
 postsRouter.post("/:id/comments/:commentId/like", likeComment);

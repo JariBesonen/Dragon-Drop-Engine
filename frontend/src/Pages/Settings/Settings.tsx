@@ -4,6 +4,24 @@ import { useAuth } from "../../context/AuthContext";
 import { ApiError, api } from "../../lib/api";
 import "./Settings.css";
 
+type NotificationPreferences = {
+  all: boolean;
+  postLikes: boolean;
+  postComments: boolean;
+  replies: boolean;
+  commentLikes: boolean;
+  hiveFollows: boolean;
+};
+
+const defaultNotificationPreferences: NotificationPreferences = {
+  all: true,
+  postLikes: true,
+  postComments: true,
+  replies: true,
+  commentLikes: true,
+  hiveFollows: true,
+};
+
 export default function Settings() {
   const navigate = useNavigate();
   const { currentUser, loading, refreshMe, deleteAccount } = useAuth();
@@ -11,6 +29,10 @@ export default function Settings() {
   const [themePreference, setThemePreference] = useState<"light" | "dark">(
     currentUser?.themePreference || "light",
   );
+  const [notificationPreferences, setNotificationPreferences] =
+    useState<NotificationPreferences>(
+      currentUser?.notificationPreferences || defaultNotificationPreferences,
+    );
   const [settingsMessage, setSettingsMessage] = useState<string>("");
   const [deleteConfirmation, setDeleteConfirmation] = useState<string>("");
   const [deleteMessage, setDeleteMessage] = useState<string>("");
@@ -24,6 +46,9 @@ export default function Settings() {
 
     setUsername(currentUser.username);
     setThemePreference(currentUser.themePreference);
+    setNotificationPreferences(
+      currentUser.notificationPreferences || defaultNotificationPreferences,
+    );
   }, [currentUser]);
 
   useEffect(() => {
@@ -49,6 +74,7 @@ export default function Settings() {
       await api.updateSettings({
         username: trimmedUsername,
         themePreference,
+        notificationPreferences,
       });
       await refreshMe();
       setSettingsMessage("Settings updated.");
@@ -138,6 +164,108 @@ export default function Settings() {
                 setUsername(event.target.value);
               }}
             />
+          </section>
+
+          <section className="settings-section">
+            <h3>Notifications</h3>
+            <p>Mute all notifications or control individual notification types.</p>
+
+            <label className="settings-checkbox-row">
+              <input
+                type="checkbox"
+                checked={notificationPreferences.all}
+                onChange={(event) => {
+                  const checked = event.target.checked;
+                  setNotificationPreferences((current) => ({
+                    ...current,
+                    all: checked,
+                  }));
+                }}
+              />
+              Enable all notifications
+            </label>
+
+            <div className="settings-checkbox-list">
+              <label className="settings-checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={notificationPreferences.postLikes}
+                  disabled={!notificationPreferences.all}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setNotificationPreferences((current) => ({
+                      ...current,
+                      postLikes: checked,
+                    }));
+                  }}
+                />
+                Likes on your posts
+              </label>
+
+              <label className="settings-checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={notificationPreferences.postComments}
+                  disabled={!notificationPreferences.all}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setNotificationPreferences((current) => ({
+                      ...current,
+                      postComments: checked,
+                    }));
+                  }}
+                />
+                Comments on your posts
+              </label>
+
+              <label className="settings-checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={notificationPreferences.replies}
+                  disabled={!notificationPreferences.all}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setNotificationPreferences((current) => ({
+                      ...current,
+                      replies: checked,
+                    }));
+                  }}
+                />
+                Replies to your posts or comments
+              </label>
+
+              <label className="settings-checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={notificationPreferences.commentLikes}
+                  disabled={!notificationPreferences.all}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setNotificationPreferences((current) => ({
+                      ...current,
+                      commentLikes: checked,
+                    }));
+                  }}
+                />
+                Likes on your comments
+              </label>
+
+              <label className="settings-checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={notificationPreferences.hiveFollows}
+                  disabled={!notificationPreferences.all}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setNotificationPreferences((current) => ({
+                      ...current,
+                      hiveFollows: checked,
+                    }));
+                  }}
+                />
+                New followers of your hives
+              </label>
+            </div>
           </section>
 
           <button type="submit" disabled={isSaving}>
