@@ -294,4 +294,13 @@ export async function initDatabase(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS messages_sender_recipient_created_idx
      ON messages (sender_user_id, recipient_user_id, created_at DESC);`,
   );
+
+  await query(
+    `ALTER TABLE messages ADD COLUMN IF NOT EXISTS read_at TIMESTAMP;`,
+  );
+
+  await query(
+    `CREATE INDEX IF NOT EXISTS messages_unread_idx
+     ON messages (recipient_user_id, read_at) WHERE read_at IS NULL;`,
+  );
 }

@@ -421,6 +421,8 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  getUnreadMessageCount: () =>
+    request<{ unreadCount: number }>("/api/messages/unread-count"),
   getConversationList: () =>
     request<{ conversations: ApiConversation[] }>("/api/messages"),
   getConversation: (userId: number) =>

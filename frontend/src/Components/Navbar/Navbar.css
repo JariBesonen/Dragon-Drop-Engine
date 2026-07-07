@@ -210,6 +210,28 @@ a {
   line-height: 1;
 }
 
+.nav-messages-item {
+  position: relative;
+}
+
+.nav-messages-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-messages-dot {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff5b00;
+  display: block;
+}
+
 .nav-notifications-dropdown {
   position: absolute;
   top: calc(100% + 0.5rem);

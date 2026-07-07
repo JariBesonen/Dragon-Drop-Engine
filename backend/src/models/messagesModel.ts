@@ -113,3 +113,23 @@ export async function getConversationList(
     [userId],
   );
 }
+
+export async function getUnreadMessageCount(userId: number): Promise<number> {
+  const rows = await query<{ count: string }>(
+    `SELECT COUNT(*) as count FROM messages
+     WHERE recipient_user_id = $1 AND read_at IS NULL`,
+    [userId],
+  );
+  return parseInt(rows[0].count, 10);
+}
+
+export async function markConversationRead(
+  userId: number,
+  otherUserId: number,
+): Promise<void> {
+  await query(
+    `UPDATE messages SET read_at = NOW()
+     WHERE recipient_user_id = $1 AND sender_user_id = $2 AND read_at IS NULL`,
+    [userId, otherUserId],
+  );
+}

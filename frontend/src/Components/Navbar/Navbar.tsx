@@ -59,6 +59,7 @@ function Navbar() {
   const [notificationsOpen, setNotificationsOpen] = useState<boolean>(false);
   const [notifications, setNotifications] = useState<ApiNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [unreadMessageCount, setUnreadMessageCount] = useState<number>(0);
   const [notificationsLoading, setNotificationsLoading] =
     useState<boolean>(false);
   const searchContainerRef = useRef<HTMLFormElement>(null);
@@ -135,6 +136,26 @@ function Navbar() {
     }
 
     void loadNotifications();
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setUnreadMessageCount(0);
+      return;
+    }
+
+    async function pollUnreadMessages(): Promise<void> {
+      try {
+        const response = await api.getUnreadMessageCount();
+        setUnreadMessageCount(response.unreadCount);
+      } catch {
+        // ignore polling errors
+      }
+    }
+
+    void pollUnreadMessages();
+    const interval = setInterval(() => { void pollUnreadMessages(); }, 5000);
+    return () => clearInterval(interval);
   }, [currentUser]);
 
   const trimmedQuery = searchQuery.trim();
@@ -347,8 +368,13 @@ function Navbar() {
             </li>
           ) : null}
           {currentUser ? (
-            <li>
-              <Link to="/messages">messages</Link>
+            <li className="nav-messages-item">
+              <Link to="/messages" className="nav-messages-link">
+                messages
+                {unreadMessageCount > 0 ? (
+                  <span className="nav-messages-dot" aria-label={`${unreadMessageCount} unread messages`} />
+                ) : null}
+              </Link>
             </li>
           ) : null}
           <li>

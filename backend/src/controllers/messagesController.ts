@@ -2,8 +2,10 @@ import type { Request, Response } from "express";
 import {
   getConversation,
   getConversationList,
+  getUnreadMessageCount,
   mapConversation,
   mapMessage,
+  markConversationRead,
   sendMessage,
 } from "../models/messagesModel";
 import { getProfileUserById } from "../models/profileModel";
@@ -87,8 +89,25 @@ export async function getThread(
 
   try {
     const messages = await getConversation(req.session.userId, otherUserId);
+    await markConversationRead(req.session.userId, otherUserId);
     return res.status(200).json({ messages: messages.map(mapMessage) });
   } catch (error) {
     return res.status(500).json({ message: "Failed to load conversation." });
+  }
+}
+
+export async function getUnreadCount(
+  req: Request,
+  res: Response,
+): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  try {
+    const count = await getUnreadMessageCount(req.session.userId);
+    return res.status(200).json({ unreadCount: count });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to get unread count." });
   }
 }
