@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { api, type ApiHive, type ApiNotification } from "../../lib/api";
@@ -61,6 +61,23 @@ function Navbar() {
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [notificationsLoading, setNotificationsLoading] =
     useState<boolean>(false);
+  const searchContainerRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent): void {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setSearchOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     const query = searchQuery.trim();
@@ -180,7 +197,7 @@ function Navbar() {
       <Link className="brand-link" to="/">
         <h1>Hive</h1>
       </Link>
-      <form className="nav-search" onSubmit={handleSearch}>
+      <form className="nav-search" onSubmit={handleSearch} ref={searchContainerRef}>
         <div className="nav-search-field">
           <input
             type="search"
