@@ -6,7 +6,7 @@
 }
 
 .feed-shell {
-  width: min(960px, 100%);
+  width: min(1400px, 100%);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -36,7 +36,24 @@
 }
 
 .feed-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.8rem;
+}
+
+/* Responsive layout */
+@media (max-width: 1024px) {
+  .feed-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .feed-list {
+    grid-template-columns: 1fr;
+  }
+
+  .feed-shell {
+    width: min(960px, 100%);
+  }
 }

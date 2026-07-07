@@ -1,0 +1,79 @@
+.login-prompt-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.login-prompt-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--surface-bg);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.login-prompt-message {
+  color: var(--body-text);
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.login-prompt-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.login-prompt-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.login-prompt-close {
+  background: none;
+  border: none;
+  color: var(--muted-text);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  min-width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.login-prompt-close:hover {
+  color: var(--body-text);
+}
+
+@media (max-width: 768px) {
+  .login-prompt-content {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  .login-prompt-message {
+    white-space: normal;
+  }
+}

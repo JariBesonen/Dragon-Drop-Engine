@@ -80,6 +80,57 @@ export async function getExplorePosts(userId?: number): Promise<PostRow[]> {
   );
 }
 
+export async function getRecommendedPosts(userId?: number): Promise<PostRow[]> {
+  if (typeof userId === "number") {
+    return query<PostRow>(
+      `SELECT ${postVoteSelect(
+        `COALESCE((SELECT pv.vote FROM post_votes pv WHERE pv.post_id = p.id AND pv.user_id = $1 LIMIT 1), 0)`,
+      )}
+       FROM posts p
+       JOIN users u ON u.id = p.user_id
+       LEFT JOIN hives h ON h.id = p.hive_id
+       WHERE h.id IS NULL
+          OR h.is_private = false
+          OR h.owner_user_id = $1
+          OR EXISTS (
+            SELECT 1
+            FROM hive_memberships hm
+            WHERE hm.hive_id = h.id AND hm.user_id = $1
+          )
+       ORDER BY (
+         CASE WHEN EXISTS (SELECT 1 FROM hive_memberships hm WHERE hm.hive_id = p.hive_id AND hm.user_id = $1)
+           THEN 400 ELSE 0 END +
+         CASE WHEN EXISTS (SELECT 1 FROM follows f WHERE f.followed_id = p.user_id AND f.follower_id = $1)
+           THEN 300 ELSE 0 END +
+         (COALESCE((SELECT COUNT(*) FROM post_votes pv WHERE pv.post_id = p.id AND pv.vote = 1), 0) +
+          COALESCE((SELECT COUNT(*) FROM post_votes pv WHERE pv.post_id = p.id AND pv.vote = -1), 0) +
+          COALESCE((SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id AND c.deleted_at IS NULL), 0)) * 5 +
+         LEAST(100::integer, CAST(EXTRACT(EPOCH FROM (NOW() - p.created_at)) / 3600.0 AS INTEGER)) +
+         ((p.id % 101) - 50)
+       ) DESC
+       LIMIT 60`,
+      [userId],
+    );
+  }
+
+  return query<PostRow>(
+    `SELECT ${postVoteSelect(`0::smallint`)}
+     FROM posts p
+     JOIN users u ON u.id = p.user_id
+     LEFT JOIN hives h ON h.id = p.hive_id
+     WHERE h.id IS NULL OR h.is_private = false
+     ORDER BY (
+       (COALESCE((SELECT COUNT(*) FROM post_votes pv WHERE pv.post_id = p.id AND pv.vote = 1), 0) +
+        COALESCE((SELECT COUNT(*) FROM post_votes pv WHERE pv.post_id = p.id AND pv.vote = -1), 0) +
+        COALESCE((SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id AND c.deleted_at IS NULL), 0)) * 5 +
+       LEAST(100::integer, CAST(EXTRACT(EPOCH FROM (NOW() - p.created_at)) / 3600.0 AS INTEGER)) +
+       ((p.id % 101) - 50)
+     ) DESC
+     LIMIT 60`,
+    [],
+  );
+}
+
 export async function getHomePosts(userId: number): Promise<PostRow[]> {
   return query<PostRow>(
     `SELECT DISTINCT ${postVoteSelect(

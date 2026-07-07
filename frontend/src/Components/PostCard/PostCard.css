@@ -16,6 +16,18 @@
   color: var(--muted-text);
 }
 
+.post-card-community-link {
+  color: var(--muted-text);
+  text-decoration: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.post-card-community-link:hover {
+  color: var(--body-text);
+}
+
 .post-card-meta-actions {
   display: flex;
   align-items: center;

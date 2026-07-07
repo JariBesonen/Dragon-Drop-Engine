@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import type { ApiComment, ApiPost } from "../../lib/api";
 import { ApiError, api } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
@@ -30,9 +31,11 @@ function formatDate(isoDate: string): string {
 export default function PostCard({
   post,
   hideComments = false,
+  onRequireLogin,
 }: {
   post: ApiPost;
   hideComments?: boolean;
+  onRequireLogin?: () => void;
 }) {
   const { currentUser } = useAuth();
   const [isDeleted, setIsDeleted] = useState<boolean>(false);
@@ -108,7 +111,7 @@ export default function PostCard({
 
   async function handleVote(nextVote: 1 | -1): Promise<void> {
     if (!currentUser) {
-      setVoteMessage("Log in to like or dislike posts.");
+      onRequireLogin?.();
       return;
     }
 
@@ -137,6 +140,7 @@ export default function PostCard({
 
   async function handleSaveToggle(): Promise<void> {
     if (!currentUser) {
+      onRequireLogin?.();
       return;
     }
 
@@ -236,7 +240,7 @@ export default function PostCard({
 
   async function handleCreateComment(): Promise<void> {
     if (!currentUser) {
-      setCommentsMessage("Log in to comment.");
+      onRequireLogin?.();
       return;
     }
 
@@ -548,7 +552,16 @@ export default function PostCard({
   return (
     <article className="post-card">
       <header className="post-card-header">
-        <span>c/{post.community}</span>
+        {post.hiveId ? (
+          <Link
+            to={`/hive/${post.hiveId}`}
+            className="post-card-community-link"
+          >
+            c/{post.community}
+          </Link>
+        ) : (
+          <span>c/{post.community}</span>
+        )}
         <div className="post-card-meta-actions">
           <span className="post-card-author">@{post.authorUsername}</span>
           {currentUser?.id === post.userId ? (
@@ -577,7 +590,7 @@ export default function PostCard({
           onClick={() => {
             void handleVote(1);
           }}
-          disabled={!currentUser || isVoting}
+          disabled={isVoting}
           aria-pressed={userVote === 1}
         >
           Like <span>{likeCount}</span>
@@ -588,7 +601,7 @@ export default function PostCard({
           onClick={() => {
             void handleVote(-1);
           }}
-          disabled={!currentUser || isVoting}
+          disabled={isVoting}
           aria-pressed={userVote === -1}
         >
           Dislike <span>{dislikeCount}</span>
@@ -604,19 +617,17 @@ export default function PostCard({
             {isCommentsOpen ? "Hide Comments" : "Show Comments"}
           </button>
         )}
-        {currentUser ? (
-          <button
-            type="button"
-            className={`post-card-save-button ${isSaved ? "active" : ""}`}
-            onClick={() => {
-              void handleSaveToggle();
-            }}
-            disabled={isSaving}
-            aria-pressed={isSaved}
-          >
-            {isSaving ? "..." : isSaved ? "Saved" : "Save"}
-          </button>
-        ) : null}
+        <button
+          type="button"
+          className={`post-card-save-button ${isSaved ? "active" : ""}`}
+          onClick={() => {
+            void handleSaveToggle();
+          }}
+          disabled={isSaving}
+          aria-pressed={isSaved}
+        >
+          {isSaving ? "..." : isSaved ? "Saved" : "Save"}
+        </button>
       </div>
 
       {hideComments ? null : (
@@ -625,20 +636,18 @@ export default function PostCard({
             <textarea
               rows={2}
               value={commentDraft}
-              placeholder={
-                currentUser ? "Write a comment" : "Log in to comment"
-              }
+              placeholder="Write a comment"
               onChange={(event) => {
                 setCommentDraft(event.target.value);
               }}
-              disabled={!currentUser || isCommentSubmitting}
+              disabled={isCommentSubmitting}
             />
             <button
               type="button"
               onClick={() => {
                 void handleCreateComment();
               }}
-              disabled={!currentUser || isCommentSubmitting}
+              disabled={isCommentSubmitting}
             >
               {isCommentSubmitting ? "Posting..." : "Comment"}
             </button>

@@ -17,20 +17,16 @@ import {
   deletePostByOwner,
   getHivePosts,
   getExplorePosts,
+  getRecommendedPosts,
   getHomePosts,
   getPostById,
   mapPost,
   voteOnPost,
 } from "../models/postsModel";
-import {
-  isPostSaved,
-  savePost,
-  unsavePost,
-} from "../models/profileModel";
-
+import { isPostSaved, savePost, unsavePost } from "../models/profileModel";
 
 export async function explore(req: Request, res: Response): Promise<Response> {
-  const posts = await getExplorePosts(req.session.userId);
+  const posts = await getRecommendedPosts(req.session.userId);
   return res.status(200).json({ posts: posts.map(mapPost) });
 }
 
