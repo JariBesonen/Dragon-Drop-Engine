@@ -114,6 +114,26 @@ export interface ApiNotification {
   read: boolean;
 }
 
+export interface ApiMessage {
+  id: number;
+  senderUserId: number;
+  recipientUserId: number;
+  senderUsername: string;
+  senderDisplayName: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface ApiConversation {
+  otherUserId: number;
+  otherUserUsername: string;
+  otherUserDisplayName: string;
+  otherUserAvatarUrl: string | null;
+  latestMessageContent: string;
+  latestMessageCreatedAt: string;
+  latestMessageSenderId: number;
+}
+
 export interface ApiHive {
   id: number;
   ownerUserId: number;
@@ -129,6 +149,13 @@ export interface ApiHive {
 export interface ApiSearchResult {
   searches: string[];
   hives: ApiHive[];
+  users?: Array<{
+    id: number;
+    username: string;
+    displayName: string;
+    avatarUrl: string | null;
+    bio: string | null;
+  }>;
 }
 
 export interface ApiHiveDetailResult {
@@ -389,4 +416,13 @@ export const api = {
       method: "DELETE",
       body: JSON.stringify(body),
     }),
+  sendMessage: (body: { recipientUserId: number; content: string }) =>
+    request<{ message: ApiMessage }>("/api/messages", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  getConversationList: () =>
+    request<{ conversations: ApiConversation[] }>("/api/messages"),
+  getConversation: (userId: number) =>
+    request<{ messages: ApiMessage[] }>(`/api/messages/${userId}`),
 };

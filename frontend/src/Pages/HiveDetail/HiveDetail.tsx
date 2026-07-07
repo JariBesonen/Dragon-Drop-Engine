@@ -403,8 +403,18 @@ export default function HiveDetail() {
           <div>
             <h2>{hive.name}</h2>
             <p className="hive-meta">
-              Created by {hive.ownerUsername || `user #${hive.ownerUserId}`} on{" "}
-              {new Date(hive.createdAt).toLocaleDateString()}
+              Created by{" "}
+              {hive.ownerUsername ? (
+                <Link
+                  to={`/profile/${hive.ownerUsername}`}
+                  className="hive-owner-link"
+                >
+                  {hive.ownerUsername}
+                </Link>
+              ) : (
+                `user #${hive.ownerUserId}`
+              )}{" "}
+              on {new Date(hive.createdAt).toLocaleDateString()}
             </p>
             <p className="hive-privacy-pill">
               {hive.isPrivate ? "Private Hive" : "Public Hive"}

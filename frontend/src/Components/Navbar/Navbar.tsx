@@ -346,6 +346,11 @@ function Navbar() {
               ) : null}
             </li>
           ) : null}
+          {currentUser ? (
+            <li>
+              <Link to="/messages">messages</Link>
+            </li>
+          ) : null}
           <li>
             <Link to="/profile">profile</Link>
           </li>

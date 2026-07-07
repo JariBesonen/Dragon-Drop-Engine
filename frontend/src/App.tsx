@@ -15,6 +15,7 @@ import Search from "./Pages/Search/Search";
 import Settings from "./Pages/Settings/Settings";
 import Login from "./Pages/Login/Login";
 import Register from "./Pages/Register/Register";
+import { Messages } from "./Pages/Messages/Messages";
 //IMPORTED COMPONENTS
 import Footer from "./Components/Footer/Footer";
 import Navbar from "./Components/Navbar/Navbar";
@@ -38,6 +39,8 @@ function AppLayout() {
           <Route path="/hive/:id" element={<HiveDetail />} />
           <Route path="/posts/:id" element={<PostDetail />} />
           <Route path="/create" element={<Create />} />
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/messages/:userId" element={<Messages />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/profile/:username" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />

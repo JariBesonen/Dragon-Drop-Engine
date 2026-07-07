@@ -60,7 +60,9 @@ function SideNavbar() {
       {currentUser ? (
         <section className="side-nav-section">
           <h2>Joined Hives</h2>
-          {joinedHiveError ? <p className="side-error">{joinedHiveError}</p> : null}
+          {joinedHiveError ? (
+            <p className="side-error">{joinedHiveError}</p>
+          ) : null}
           {!joinedHiveError && joinedHives.length === 0 ? (
             <p className="side-placeholder">Join a hive to see it here.</p>
           ) : null}
@@ -103,6 +105,7 @@ function SideNavbar() {
 
       <section className="side-nav-section side-nav-resources">
         <h2>Resources</h2>
+        {currentUser ? <NavLink to="/messages">Messages</NavLink> : null}
         <NavLink to="/settings">Settings</NavLink>
       </section>
     </aside>

@@ -4,6 +4,14 @@ import PostCard from "../../Components/PostCard/PostCard";
 import { api, type ApiHive, type ApiPost } from "../../lib/api";
 import "./Search.css";
 
+interface SearchUser {
+  id: number;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+}
+
 export default function Search() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q")?.trim() || "";
@@ -12,12 +20,14 @@ export default function Search() {
   const [error, setError] = useState<string>("");
   const [allPosts, setAllPosts] = useState<ApiPost[]>([]);
   const [hives, setHives] = useState<ApiHive[]>([]);
+  const [users, setUsers] = useState<SearchUser[]>([]);
 
   useEffect(() => {
     async function loadResults(): Promise<void> {
       if (!query) {
         setAllPosts([]);
         setHives([]);
+        setUsers([]);
         setError("");
         return;
       }
@@ -30,6 +40,7 @@ export default function Search() {
         ]);
 
         setHives(searchResponse.hives);
+        setUsers(searchResponse.users || []);
         setAllPosts(exploreResponse.posts);
         setError("");
       } catch (caughtError) {
@@ -71,7 +82,8 @@ export default function Search() {
     !error &&
     query.length > 0 &&
     postResults.length === 0 &&
-    hives.length === 0;
+    hives.length === 0 &&
+    users.length === 0;
 
   return (
     <main className="search-page">
@@ -81,7 +93,7 @@ export default function Search() {
           <p className="search-query">Results for "{query}"</p>
         ) : (
           <p className="search-query">
-            Type in the search bar to find posts and communities.
+            Type in the search bar to find posts, communities, and users.
           </p>
         )}
 
@@ -93,6 +105,36 @@ export default function Search() {
 
         {!error && query ? (
           <>
+            {users.length > 0 ? (
+              <section className="search-section">
+                <h3>Users</h3>
+                <div className="search-user-list">
+                  {users.map((user: SearchUser) => (
+                    <Link
+                      key={user.id}
+                      className="search-user-card"
+                      to={`/profile/${user.username}`}
+                    >
+                      {user.avatarUrl && (
+                        <img
+                          src={user.avatarUrl}
+                          alt={user.displayName}
+                          className="search-user-avatar"
+                        />
+                      )}
+                      <div className="search-user-info">
+                        <h4>{user.displayName}</h4>
+                        <p className="search-user-username">@{user.username}</p>
+                        {user.bio && (
+                          <p className="search-user-bio">{user.bio}</p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
             <section className="search-section">
               <h3>Hives</h3>
               {hives.length === 0 ? (

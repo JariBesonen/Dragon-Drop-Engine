@@ -1,6 +1,14 @@
 import { query } from "../db";
 import type { HiveRow } from "./hivesModel";
 
+export interface UserSearchRow {
+  id: number;
+  username: string;
+  display_name: string;
+  avatar_url: string | null;
+  bio: string | null;
+}
+
 export async function getSearchSuggestions(
   term: string,
   viewerUserId?: number,
@@ -61,9 +69,7 @@ export async function getSearchSuggestions(
   return rows.map((row) => row.suggestion);
 }
 
-export async function getSearchHives(
-  term: string,
-): Promise<HiveRow[]> {
+export async function getSearchHives(term: string): Promise<HiveRow[]> {
   return query<HiveRow>(
     `SELECT h.*
      FROM hives h
@@ -72,6 +78,17 @@ export async function getSearchHives(
          OR array_to_string(h.tags, ' ') ILIKE $1)
      ORDER BY h.created_at DESC
      LIMIT 5`,
+    [term],
+  );
+}
+
+export async function getSearchUsers(term: string): Promise<UserSearchRow[]> {
+  return query<UserSearchRow>(
+    `SELECT id, username, display_name, avatar_url, bio
+     FROM users
+     WHERE username ILIKE $1 OR display_name ILIKE $1
+     ORDER BY username ASC
+     LIMIT 10`,
     [term],
   );
 }

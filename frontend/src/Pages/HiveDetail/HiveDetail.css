@@ -43,6 +43,18 @@
   color: var(--muted-text);
 }
 
+.hive-owner-link {
+  color: #0a7ea4;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.hive-owner-link:hover {
+  color: #065f87;
+  text-decoration: underline;
+}
+
 .hive-privacy-pill {
   margin-top: 0.35rem;
   display: inline-flex;

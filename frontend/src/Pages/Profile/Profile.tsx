@@ -696,9 +696,7 @@ export default function Profile() {
             {profile.isLimitedProfile ? (
               <article className="profile-placeholder-card profile-private-lock-card">
                 <h3>This account is private</h3>
-                <p>
-                  Follow this account to view their posts and comments.
-                </p>
+                <p>Follow this account to view their posts and comments.</p>
               </article>
             ) : null}
 
@@ -943,28 +941,36 @@ export default function Profile() {
             <article className="profile-sidebar-card">
               <h3>@{profile.user.username}</h3>
               {!isOwnProfile && currentUser ? (
-                <button
-                  type="button"
-                  className={`profile-follow-button ${
-                    followRequestStatus === "pending"
-                      ? "profile-follow-button--pending"
-                      : ""
-                  }`}
-                  onClick={() => {
-                    void handleFollowToggle();
-                  }}
-                  disabled={isFollowSubmitting}
-                >
-                  {isFollowSubmitting
-                    ? "Updating..."
-                    : followRequestStatus === "pending"
-                      ? "Cancel Request"
-                      : isFollowing
-                      ? "Unfollow"
-                        : profile.user.isPrivate
-                          ? "Request to Follow"
-                          : "Follow"}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className={`profile-follow-button ${
+                      followRequestStatus === "pending"
+                        ? "profile-follow-button--pending"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      void handleFollowToggle();
+                    }}
+                    disabled={isFollowSubmitting}
+                  >
+                    {isFollowSubmitting
+                      ? "Updating..."
+                      : followRequestStatus === "pending"
+                        ? "Cancel Request"
+                        : isFollowing
+                          ? "Unfollow"
+                          : profile.user.isPrivate
+                            ? "Request to Follow"
+                            : "Follow"}
+                  </button>
+                  <Link
+                    to={`/messages/${profile.user.id}`}
+                    className="profile-message-button"
+                  >
+                    Message
+                  </Link>
+                </>
               ) : null}
               <p className="profile-stat-line">{followerCount} followers</p>
               <p className="profile-bio">{profile.user.bio || "No bio yet."}</p>
@@ -1005,7 +1011,10 @@ export default function Profile() {
                         );
 
                         return (
-                          <li key={request.id} className="profile-follow-request-item">
+                          <li
+                            key={request.id}
+                            className="profile-follow-request-item"
+                          >
                             <div className="profile-follow-request-header">
                               {requestAvatarSrc ? (
                                 <img

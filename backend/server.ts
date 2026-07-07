@@ -8,6 +8,7 @@ import path from "path";
 import { initDatabase } from "./src/db/init";
 import authRouter from "./src/routes/auth";
 import hivesRouter from "./src/routes/hives";
+import messagesRouter from "./src/routes/messages";
 import notificationsRouter from "./src/routes/notifications.js";
 import postsRouter from "./src/routes/posts";
 import profileRouter from "./src/routes/profile";
@@ -54,6 +55,7 @@ app.get("/", (_req: Request, res: Response) => {
 
 app.use("/api/auth", authRouter);
 app.use("/api/hives", hivesRouter);
+app.use("/api/messages", messagesRouter);
 app.use("/api/notifications", notificationsRouter);
 app.use("/api/posts", postsRouter);
 app.use("/api/profile", profileRouter);

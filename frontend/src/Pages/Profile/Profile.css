@@ -300,6 +300,24 @@
   color: #4a2c00;
 }
 
+.profile-message-button {
+  align-self: flex-start;
+  display: inline-block;
+  border: 1px solid #0a7ea4;
+  background: #0a7ea4;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.32rem 0.78rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-left: 8px;
+}
+
+.profile-message-button:hover {
+  background-color: #065f87;
+}
+
 .profile-stat-line,
 .profile-bio {
   color: var(--body-text);
