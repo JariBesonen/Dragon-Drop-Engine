@@ -403,7 +403,7 @@ export default function HiveDetail() {
           <div>
             <h2>{hive.name}</h2>
             <p className="hive-meta">
-              Created by user #{hive.ownerUserId} on{" "}
+              Created by {hive.ownerUsername || `user #${hive.ownerUserId}`} on{" "}
               {new Date(hive.createdAt).toLocaleDateString()}
             </p>
             <p className="hive-privacy-pill">
@@ -474,14 +474,6 @@ export default function HiveDetail() {
 
         {joinMessage ? (
           <p className="hive-join-message">{joinMessage}</p>
-        ) : null}
-
-        {hive.tags.length > 0 ? (
-          <div className="hive-tags">
-            {hive.tags.map((tag: string) => (
-              <span key={tag}>#{tag}</span>
-            ))}
-          </div>
         ) : null}
 
         <div className="hive-content-grid">

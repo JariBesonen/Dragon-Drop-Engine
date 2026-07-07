@@ -3,6 +3,7 @@ import { query } from "../db";
 export interface HiveRow {
   id: number;
   owner_user_id: number;
+  owner_username?: string;
   name: string;
   description: string;
   banner_image: string | null;
@@ -36,6 +37,7 @@ export function mapHive(hive: HiveRow) {
   return {
     id: hive.id,
     ownerUserId: hive.owner_user_id,
+    ownerUsername: hive.owner_username,
     name: hive.name,
     description: hive.description,
     bannerImage: hive.banner_image,
@@ -77,9 +79,10 @@ export async function getHivesByOwnerId(
 
 export async function getHiveById(id: number): Promise<HiveRow | null> {
   const rows = await query<HiveRow>(
-    `SELECT *
-     FROM hives
-     WHERE id = $1
+    `SELECT h.*, u.username as owner_username
+     FROM hives h
+     LEFT JOIN users u ON h.owner_user_id = u.id
+     WHERE h.id = $1
      LIMIT 1`,
     [id],
   );

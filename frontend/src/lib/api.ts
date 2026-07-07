@@ -117,6 +117,7 @@ export interface ApiNotification {
 export interface ApiHive {
   id: number;
   ownerUserId: number;
+  ownerUsername?: string;
   name: string;
   description: string;
   bannerImage: string | null;
@@ -315,8 +316,7 @@ export const api = {
     ),
   getMyProfile: () =>
     request<{ user: ApiUser; posts: ApiPost[] }>("/api/profile/me"),
-  getSavedPosts: () =>
-    request<{ posts: ApiPost[] }>("/api/profile/me/saved"),
+  getSavedPosts: () => request<{ posts: ApiPost[] }>("/api/profile/me/saved"),
   getNotifications: () =>
     request<{ notifications: ApiNotification[]; unreadCount: number }>(
       "/api/notifications",
