@@ -112,6 +112,17 @@ export async function joinHive(userId: number, hiveId: number): Promise<void> {
   );
 }
 
+export async function unjoinHive(
+  userId: number,
+  hiveId: number,
+): Promise<void> {
+  await query(
+    `DELETE FROM hive_memberships
+     WHERE user_id = $1 AND hive_id = $2`,
+    [userId, hiveId],
+  );
+}
+
 export async function getJoinedHivesByUserId(
   userId: number,
 ): Promise<HiveRow[]> {

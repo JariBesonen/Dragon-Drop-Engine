@@ -11,6 +11,7 @@ import {
   getJoinedHivesByUserId,
   isUserJoinedHive,
   joinHive,
+  unjoinHive,
   listPendingHiveFollowRequestsForOwner,
   mapHive,
   updateHivePrivacyByOwner,
@@ -73,10 +74,17 @@ export async function create(req: Request, res: Response): Promise<Response> {
   }
 
   const normalizedTags = normalizeTags(tags);
-  const parsedIsPrivate = parseOptionalBoolean((req.body as { isPrivate?: unknown }).isPrivate);
+  const parsedIsPrivate = parseOptionalBoolean(
+    (req.body as { isPrivate?: unknown }).isPrivate,
+  );
 
-  if ((req.body as { isPrivate?: unknown }).isPrivate !== undefined && parsedIsPrivate === undefined) {
-    return res.status(400).json({ message: "isPrivate must be a boolean value." });
+  if (
+    (req.body as { isPrivate?: unknown }).isPrivate !== undefined &&
+    parsedIsPrivate === undefined
+  ) {
+    return res
+      .status(400)
+      .json({ message: "isPrivate must be a boolean value." });
   }
 
   const uploadedBannerPath = req.file
@@ -114,7 +122,10 @@ export async function getMine(req: Request, res: Response): Promise<Response> {
   return res.json({ hives: hives.map(mapHive) });
 }
 
-export async function getJoined(req: Request, res: Response): Promise<Response> {
+export async function getJoined(
+  req: Request,
+  res: Response,
+): Promise<Response> {
   if (!req.session.userId) {
     return res.status(401).json({ message: "Not authenticated." });
   }
@@ -224,6 +235,32 @@ export async function join(req: Request, res: Response): Promise<Response> {
   });
 }
 
+export async function unjoin(req: Request, res: Response): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const hiveId = Number(req.params.id);
+  if (!Number.isInteger(hiveId) || hiveId <= 0) {
+    return res.status(400).json({ message: "Invalid hive id." });
+  }
+
+  const hive = await getHiveById(hiveId);
+  if (!hive) {
+    return res.status(404).json({ message: "Hive not found." });
+  }
+
+  if (hive.owner_user_id === req.session.userId) {
+    return res
+      .status(403)
+      .json({ message: "You cannot leave a hive you own." });
+  }
+
+  await unjoinHive(req.session.userId, hiveId);
+
+  return res.status(200).json({ message: "Left hive.", joined: false });
+}
+
 export async function getFollowRequests(
   req: Request,
   res: Response,
@@ -325,7 +362,9 @@ export async function updatePrivacy(
   );
 
   if (parsedIsPrivate === undefined) {
-    return res.status(400).json({ message: "isPrivate must be a boolean value." });
+    return res
+      .status(400)
+      .json({ message: "isPrivate must be a boolean value." });
   }
 
   const hive = await updateHivePrivacyByOwner(

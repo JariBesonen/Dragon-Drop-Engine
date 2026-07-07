@@ -49,7 +49,9 @@ export default function HiveDetail() {
   const [joinMessage, setJoinMessage] = useState<string>("");
   const [isJoining, setIsJoining] = useState<boolean>(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState<boolean>(false);
-  const [followRequests, setFollowRequests] = useState<ApiHiveFollowRequest[]>([]);
+  const [followRequests, setFollowRequests] = useState<ApiHiveFollowRequest[]>(
+    [],
+  );
   const [requestsLoading, setRequestsLoading] = useState<boolean>(false);
   const [isPostModalOpen, setIsPostModalOpen] = useState<boolean>(false);
   const [postCaption, setPostCaption] = useState<string>("");
@@ -188,6 +190,29 @@ export default function HiveDetail() {
         caughtError instanceof Error
           ? caughtError.message
           : "Unable to join hive.",
+      );
+    } finally {
+      setIsJoining(false);
+    }
+  }
+
+  async function handleUnjoinHive(): Promise<void> {
+    const hiveId = Number(id);
+    if (!Number.isInteger(hiveId) || hiveId <= 0) {
+      return;
+    }
+
+    try {
+      setIsJoining(true);
+      setJoinMessage("");
+      await api.unjoinHive(hiveId);
+      setIsJoined(false);
+      setJoinMessage("You left this hive.");
+    } catch (caughtError) {
+      setJoinMessage(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to leave hive.",
       );
     } finally {
       setIsJoining(false);
@@ -390,14 +415,20 @@ export default function HiveDetail() {
               type="button"
               className="hive-follow-button"
               disabled={
-                !currentUser || isJoined || isJoining || followRequestStatus === "pending"
+                !currentUser || isJoining || followRequestStatus === "pending"
               }
               onClick={() => {
-                void handleJoinHive();
+                if (isJoined) {
+                  void handleUnjoinHive();
+                } else {
+                  void handleJoinHive();
+                }
               }}
             >
               {isJoined
-                ? "Joined"
+                ? isJoining
+                  ? "Leaving..."
+                  : "Leave Hive"
                 : isJoining
                   ? "Submitting..."
                   : followRequestStatus === "pending"

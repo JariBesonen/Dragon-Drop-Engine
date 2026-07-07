@@ -8,6 +8,7 @@ import {
   getJoined,
   getMine,
   join,
+  unjoin,
   updatePrivacy,
 } from "../controllers/hivesController";
 import {
@@ -22,9 +23,13 @@ const hivesRouter = Router();
 hivesRouter.get("/me", getMine);
 hivesRouter.get("/joined", getJoined);
 hivesRouter.post("/:id/join", join);
+hivesRouter.delete("/:id/join", unjoin);
 hivesRouter.patch("/:id/privacy", updatePrivacy);
 hivesRouter.get("/:id/follow-requests", getFollowRequests);
-hivesRouter.post("/:id/follow-requests/:requestId/approve", approveFollowRequest);
+hivesRouter.post(
+  "/:id/follow-requests/:requestId/approve",
+  approveFollowRequest,
+);
 hivesRouter.post("/:id/follow-requests/:requestId/deny", denyFollowRequest);
 hivesRouter.get("/:id/posts", hivePosts);
 hivesRouter.post("/:id/posts", uploadHivePostImage, createPost);

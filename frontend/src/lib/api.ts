@@ -278,6 +278,10 @@ export const api = {
     }>(`/api/hives/${id}/join`, {
       method: "POST",
     }),
+  unjoinHive: (id: number) =>
+    request<{ message: string; joined: boolean }>(`/api/hives/${id}/join`, {
+      method: "DELETE",
+    }),
   updateHivePrivacy: (id: number, isPrivate: boolean) =>
     request<{ hive: ApiHive }>(`/api/hives/${id}/privacy`, {
       method: "PATCH",
@@ -319,24 +323,18 @@ export const api = {
       followerCount: number;
       isFollowing: boolean;
       requestStatus: "none" | "pending" | "accepted";
-    }>(
-      `/api/profile/${encodeURIComponent(username)}/follow`,
-      {
-        method: "POST",
-      },
-    ),
+    }>(`/api/profile/${encodeURIComponent(username)}/follow`, {
+      method: "POST",
+    }),
   unfollowUser: (username: string) =>
     request<{
       message: string;
       followerCount: number;
       isFollowing: boolean;
       requestStatus: "none" | "pending" | "accepted";
-    }>(
-      `/api/profile/${encodeURIComponent(username)}/follow`,
-      {
-        method: "DELETE",
-      },
-    ),
+    }>(`/api/profile/${encodeURIComponent(username)}/follow`, {
+      method: "DELETE",
+    }),
   getFollowRequests: () =>
     request<{ requests: ApiFollowRequest[] }>("/api/profile/follow-requests"),
   approveFollowRequest: (requestId: number) =>
