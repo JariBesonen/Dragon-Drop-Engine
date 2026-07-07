@@ -22,6 +22,12 @@ import {
   mapPost,
   voteOnPost,
 } from "../models/postsModel";
+import {
+  isPostSaved,
+  savePost,
+  unsavePost,
+} from "../models/profileModel";
+
 
 export async function explore(req: Request, res: Response): Promise<Response> {
   const posts = await getExplorePosts(req.session.userId);
@@ -492,4 +498,42 @@ export async function removeComment(
       replies: [],
     },
   });
+}
+
+export async function save(req: Request, res: Response): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const postId = Number(req.params.id);
+  if (!Number.isInteger(postId) || postId <= 0) {
+    return res.status(400).json({ message: "Invalid post id." });
+  }
+
+  const post = await getPostById(postId, req.session.userId);
+  if (!post) {
+    return res.status(404).json({ message: "Post not found." });
+  }
+
+  await savePost(req.session.userId, postId);
+  return res.status(200).json({ message: "Post saved.", saved: true });
+}
+
+export async function unsave(req: Request, res: Response): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const postId = Number(req.params.id);
+  if (!Number.isInteger(postId) || postId <= 0) {
+    return res.status(400).json({ message: "Invalid post id." });
+  }
+
+  const post = await getPostById(postId, req.session.userId);
+  if (!post) {
+    return res.status(404).json({ message: "Post not found." });
+  }
+
+  await unsavePost(req.session.userId, postId);
+  return res.status(200).json({ message: "Post unsaved.", saved: false });
 }

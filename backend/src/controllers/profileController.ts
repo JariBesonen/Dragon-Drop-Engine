@@ -19,6 +19,7 @@ import {
   getProfilePostsByUserId,
   getProfileUserById,
   getProfileUserByUsername,
+  getSavedPostsByUserId,
   isFollowingUser,
   unfollowUser,
   updateProfileSettings,
@@ -542,4 +543,16 @@ export async function settings(req: Request, res: Response): Promise<Response> {
   }
 
   return res.status(200).json({ user: mapProfileUser(user) });
+}
+
+export async function getSavedPosts(
+  req: Request,
+  res: Response,
+): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const posts = await getSavedPostsByUserId(req.session.userId);
+  return res.status(200).json({ posts: posts.map(mapPost) });
 }

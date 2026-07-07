@@ -231,6 +231,14 @@ export const api = {
     request<{ post: ApiPost }>(`/api/posts/${id}/dislike`, {
       method: "POST",
     }),
+  savePost: (id: number) =>
+    request<{ message: string; saved: boolean }>(`/api/posts/${id}/save`, {
+      method: "POST",
+    }),
+  unsavePost: (id: number) =>
+    request<{ message: string; saved: boolean }>(`/api/posts/${id}/save`, {
+      method: "DELETE",
+    }),
   getPostComments: (id: number) =>
     request<{ comments: ApiComment[] }>(`/api/posts/${id}/comments`),
   createPostComment: (
@@ -307,6 +315,8 @@ export const api = {
     ),
   getMyProfile: () =>
     request<{ user: ApiUser; posts: ApiPost[] }>("/api/profile/me"),
+  getSavedPosts: () =>
+    request<{ posts: ApiPost[] }>("/api/profile/me/saved"),
   getNotifications: () =>
     request<{ notifications: ApiNotification[]; unreadCount: number }>(
       "/api/notifications",

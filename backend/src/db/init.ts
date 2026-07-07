@@ -259,4 +259,18 @@ export async function initDatabase(): Promise<void> {
     `CREATE INDEX IF NOT EXISTS notifications_recipient_read_idx
      ON notifications (recipient_user_id, read_at);`,
   );
+
+  await query(
+    `CREATE TABLE IF NOT EXISTS saved_posts (
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (user_id, post_id)
+    );`,
+  );
+
+  await query(
+    `CREATE INDEX IF NOT EXISTS saved_posts_user_created_idx
+     ON saved_posts (user_id, created_at DESC);`,
+  );
 }

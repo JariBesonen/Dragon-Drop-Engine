@@ -92,6 +92,9 @@ export default function Profile() {
   const [isDeletingCommentId, setIsDeletingCommentId] = useState<number | null>(
     null,
   );
+  const [savedPosts, setSavedPosts] = useState<ApiPost[]>([]);
+  const [savedPostsLoading, setSavedPostsLoading] = useState<boolean>(false);
+  const [savedPostsError, setSavedPostsError] = useState<string>("");
 
   const resolvedUsername = username ?? currentUser?.username ?? "";
 
@@ -219,6 +222,33 @@ export default function Profile() {
       }
     };
   }, [avatarPreview, bannerPreview]);
+
+  useEffect(() => {
+    async function loadSavedPosts(): Promise<void> {
+      if (activeTab !== "saved" || !currentUser) {
+        setSavedPosts([]);
+        setSavedPostsError("");
+        return;
+      }
+
+      try {
+        setSavedPostsLoading(true);
+        setSavedPostsError("");
+        const response = await api.getSavedPosts();
+        setSavedPosts(response.posts);
+      } catch (caughtError) {
+        setSavedPostsError(
+          caughtError instanceof Error
+            ? caughtError.message
+            : "Unable to load saved posts.",
+        );
+      } finally {
+        setSavedPostsLoading(false);
+      }
+    }
+
+    void loadSavedPosts();
+  }, [activeTab, currentUser]);
 
   async function handleFollowToggle(): Promise<void> {
     if (!profile || !currentUser) {
@@ -862,13 +892,50 @@ export default function Profile() {
             ) : null}
 
             {!profile.isLimitedProfile && activeTab === "saved" ? (
-              <article className="profile-placeholder-card">
-                <h3>Saved Posts</h3>
-                <p>
-                  Saved posts are coming soon. You will be able to bookmark
-                  posts and find them here.
-                </p>
-              </article>
+              <div className="profile-feed-list">
+                {savedPostsLoading ? (
+                  <p className="profile-note">Loading saved posts...</p>
+                ) : null}
+                {savedPostsError ? (
+                  <p className="profile-error">{savedPostsError}</p>
+                ) : null}
+                {!savedPostsLoading && savedPosts.length === 0 ? (
+                  <p className="profile-note">No saved posts yet.</p>
+                ) : null}
+                {savedPosts.map((post) =>
+                  (() => {
+                    const imageSrc = resolveMediaSrc(post.imageUrl);
+
+                    return (
+                      <Link
+                        key={post.id}
+                        to={`/posts/${post.id}`}
+                        className="profile-post-link"
+                      >
+                        <article className="profile-post-card profile-link-card">
+                          <header>
+                            <p className="profile-post-community">
+                              c/{post.community}
+                            </p>
+                            <p className="profile-post-meta">
+                              {formatDate(post.createdAt)}
+                            </p>
+                          </header>
+                          {imageSrc ? (
+                            <img
+                              className="profile-post-image"
+                              src={imageSrc}
+                              alt={post.title}
+                            />
+                          ) : null}
+                          <h4>{post.title}</h4>
+                          {post.content ? <p>{post.content}</p> : null}
+                        </article>
+                      </Link>
+                    );
+                  })(),
+                )}
+              </div>
             ) : null}
           </section>
 

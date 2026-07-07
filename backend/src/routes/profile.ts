@@ -6,6 +6,7 @@ import {
   denyFollowRequest,
   follow,
   getFollowRequests,
+  getSavedPosts,
   me,
   settings,
   unfollow,
@@ -14,6 +15,7 @@ import {
 const profileRouter = Router();
 
 profileRouter.get("/me", me);
+profileRouter.get("/me/saved", getSavedPosts);
 profileRouter.patch("/settings", uploadProfileMedia, settings);
 profileRouter.get("/follow-requests", getFollowRequests);
 profileRouter.post("/follow-requests/:requestId/approve", approveFollowRequest);

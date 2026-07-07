@@ -197,7 +197,11 @@ function Navbar() {
       <Link className="brand-link" to="/">
         <h1>Hive</h1>
       </Link>
-      <form className="nav-search" onSubmit={handleSearch} ref={searchContainerRef}>
+      <form
+        className="nav-search"
+        onSubmit={handleSearch}
+        ref={searchContainerRef}
+      >
         <div className="nav-search-field">
           <input
             type="search"
@@ -328,7 +332,9 @@ function Navbar() {
                       >
                         <span className="nav-search-icon">•</span>
                         <span>
-                          <strong>{formatNotificationMessage(notification)}</strong>
+                          <strong>
+                            {formatNotificationMessage(notification)}
+                          </strong>
                           <small>
                             {new Date(notification.createdAt).toLocaleString()}
                           </small>

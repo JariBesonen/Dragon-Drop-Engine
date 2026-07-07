@@ -12,6 +12,8 @@ import {
   likeComment,
   removeComment,
   remove,
+  save,
+  unsave,
 } from "../controllers/postsController";
 import { uploadHivePostImage } from "../middleware/upload";
 
@@ -27,6 +29,8 @@ postsRouter.post("/:id/comments/:commentId/dislike", dislikeComment);
 postsRouter.delete("/:id/comments/:commentId", removeComment);
 postsRouter.post("/:id/like", like);
 postsRouter.post("/:id/dislike", dislike);
+postsRouter.post("/:id/save", save);
+postsRouter.delete("/:id/save", unsave);
 postsRouter.delete("/:id", remove);
 postsRouter.post("/", uploadHivePostImage, create);
 

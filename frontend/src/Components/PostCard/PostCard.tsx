@@ -47,6 +47,8 @@ export default function PostCard({
   );
   const [isVoting, setIsVoting] = useState<boolean>(false);
   const [voteMessage, setVoteMessage] = useState<string>("");
+  const [isSaved, setIsSaved] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isCommentsOpen, setIsCommentsOpen] = useState<boolean>(false);
   const [hasLoadedComments, setHasLoadedComments] = useState<boolean>(false);
   const [comments, setComments] = useState<ApiComment[]>([]);
@@ -130,6 +132,26 @@ export default function PostCard({
       );
     } finally {
       setIsVoting(false);
+    }
+  }
+
+  async function handleSaveToggle(): Promise<void> {
+    if (!currentUser) {
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      if (isSaved) {
+        await api.unsavePost(post.id);
+      } else {
+        await api.savePost(post.id);
+      }
+      setIsSaved(!isSaved);
+    } catch (caughtError) {
+      // Silently fail for now
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -582,6 +604,19 @@ export default function PostCard({
             {isCommentsOpen ? "Hide Comments" : "Show Comments"}
           </button>
         )}
+        {currentUser ? (
+          <button
+            type="button"
+            className={`post-card-save-button ${isSaved ? "active" : ""}`}
+            onClick={() => {
+              void handleSaveToggle();
+            }}
+            disabled={isSaving}
+            aria-pressed={isSaved}
+          >
+            {isSaving ? "..." : isSaved ? "Saved" : "Save"}
+          </button>
+        ) : null}
       </div>
 
       {hideComments ? null : (
