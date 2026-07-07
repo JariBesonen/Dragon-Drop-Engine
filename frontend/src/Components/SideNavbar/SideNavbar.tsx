@@ -8,12 +8,16 @@ function SideNavbar() {
   const { currentUser } = useAuth();
   const [myHives, setMyHives] = useState<ApiHive[]>([]);
   const [hiveError, setHiveError] = useState<string>("");
+  const [joinedHives, setJoinedHives] = useState<ApiHive[]>([]);
+  const [joinedHiveError, setJoinedHiveError] = useState<string>("");
 
   useEffect(() => {
     async function loadMyHives(): Promise<void> {
       if (!currentUser) {
         setMyHives([]);
         setHiveError("");
+        setJoinedHives([]);
+        setJoinedHiveError("");
         return;
       }
 
@@ -28,6 +32,18 @@ function SideNavbar() {
             : "Unable to load your hives.",
         );
       }
+
+      try {
+        const response = await api.getJoinedHives();
+        setJoinedHives(response.hives);
+        setJoinedHiveError("");
+      } catch (caughtError) {
+        setJoinedHiveError(
+          caughtError instanceof Error
+            ? caughtError.message
+            : "Unable to load joined hives.",
+        );
+      }
     }
 
     void loadMyHives();
@@ -40,6 +56,28 @@ function SideNavbar() {
         <NavLink to="/">Home</NavLink>
         <NavLink to="/explore">Explore</NavLink>
       </section>
+
+      {currentUser ? (
+        <section className="side-nav-section">
+          <h2>Joined Hives</h2>
+          {joinedHiveError ? <p className="side-error">{joinedHiveError}</p> : null}
+          {!joinedHiveError && joinedHives.length === 0 ? (
+            <p className="side-placeholder">Join a hive to see it here.</p>
+          ) : null}
+          <div className="side-hives-list">
+            {joinedHives.slice(0, 5).map((hive: ApiHive) => (
+              <NavLink key={hive.id} to={`/hive/${hive.id}`}>
+                {hive.name}
+              </NavLink>
+            ))}
+          </div>
+          {joinedHives.length > 5 ? (
+            <NavLink className="side-view-all" to="/profile">
+              View all
+            </NavLink>
+          ) : null}
+        </section>
+      ) : null}
 
       {currentUser ? (
         <section className="side-nav-section">

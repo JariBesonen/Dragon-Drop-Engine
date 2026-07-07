@@ -268,6 +268,7 @@ export const api = {
       body: formData,
     }),
   getMyHives: () => request<{ hives: ApiHive[] }>("/api/hives/me"),
+  getJoinedHives: () => request<{ hives: ApiHive[] }>("/api/hives/joined"),
   getHive: (id: number) => request<ApiHiveDetailResult>(`/api/hives/${id}`),
   joinHive: (id: number) =>
     request<{

@@ -112,6 +112,20 @@ export async function joinHive(userId: number, hiveId: number): Promise<void> {
   );
 }
 
+export async function getJoinedHivesByUserId(
+  userId: number,
+): Promise<HiveRow[]> {
+  return query<HiveRow>(
+    `SELECT h.*
+     FROM hives h
+     JOIN hive_memberships hm ON hm.hive_id = h.id
+     WHERE hm.user_id = $1
+       AND h.owner_user_id != $1
+     ORDER BY h.created_at DESC`,
+    [userId],
+  );
+}
+
 export async function updateHivePrivacyByOwner(
   hiveId: number,
   ownerUserId: number,

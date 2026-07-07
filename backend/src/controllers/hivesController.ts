@@ -8,6 +8,7 @@ import {
   getHiveFollowRequest,
   getHiveById,
   getHivesByOwnerId,
+  getJoinedHivesByUserId,
   isUserJoinedHive,
   joinHive,
   listPendingHiveFollowRequestsForOwner,
@@ -110,6 +111,15 @@ export async function getMine(req: Request, res: Response): Promise<Response> {
   }
 
   const hives = await getHivesByOwnerId(req.session.userId);
+  return res.json({ hives: hives.map(mapHive) });
+}
+
+export async function getJoined(req: Request, res: Response): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const hives = await getJoinedHivesByUserId(req.session.userId);
   return res.json({ hives: hives.map(mapHive) });
 }
 

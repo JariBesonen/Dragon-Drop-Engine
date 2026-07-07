@@ -5,6 +5,7 @@ import {
   denyFollowRequest,
   getFollowRequests,
   getById,
+  getJoined,
   getMine,
   join,
   updatePrivacy,
@@ -19,6 +20,7 @@ import { uploadHivePostImage } from "../middleware/upload";
 const hivesRouter = Router();
 
 hivesRouter.get("/me", getMine);
+hivesRouter.get("/joined", getJoined);
 hivesRouter.post("/:id/join", join);
 hivesRouter.patch("/:id/privacy", updatePrivacy);
 hivesRouter.get("/:id/follow-requests", getFollowRequests);
