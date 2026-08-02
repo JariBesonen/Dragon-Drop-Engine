@@ -6,7 +6,7 @@ import "./Create.css";
 
 export default function Create() {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser, incrementHiveRefreshKey } = useAuth();
 
   const [name, setName] = useState<string>("");
   const [description, setDescription] = useState<string>("");
@@ -68,6 +68,7 @@ export default function Create() {
       }
 
       await api.createHive(formData);
+      incrementHiveRefreshKey();
       setMessage("Hive created successfully.");
       navigate("/explore");
     } catch (caughtError) {

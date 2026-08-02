@@ -5,7 +5,7 @@ import { api, type ApiHive } from "../../lib/api";
 import "./SideNavbar.css";
 
 function SideNavbar() {
-  const { currentUser } = useAuth();
+  const { currentUser, hiveRefreshKey } = useAuth();
   const [myHives, setMyHives] = useState<ApiHive[]>([]);
   const [hiveError, setHiveError] = useState<string>("");
   const [joinedHives, setJoinedHives] = useState<ApiHive[]>([]);
@@ -47,7 +47,7 @@ function SideNavbar() {
     }
 
     void loadMyHives();
-  }, [currentUser]);
+  }, [currentUser, hiveRefreshKey]);
 
   return (
     <aside className="side-nav" aria-label="Sidebar navigation">

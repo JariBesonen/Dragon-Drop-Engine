@@ -13,6 +13,8 @@ import { api, type ApiUser } from "../lib/api";
 interface AuthContextValue {
   currentUser: ApiUser | null;
   loading: boolean;
+  hiveRefreshKey: number;
+  incrementHiveRefreshKey: () => void;
   login: (identity: string, password: string) => Promise<void>;
   register: (
     username: string,
@@ -29,6 +31,11 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<ApiUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [hiveRefreshKey, setHiveRefreshKey] = useState<number>(0);
+
+  const incrementHiveRefreshKey = useCallback((): void => {
+    setHiveRefreshKey((current) => current + 1);
+  }, []);
 
   const refreshMe = useCallback(async (): Promise<void> => {
     try {
@@ -87,13 +94,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       currentUser,
       loading,
+      hiveRefreshKey,
+      incrementHiveRefreshKey,
       login,
       register,
       logout,
       deleteAccount,
       refreshMe,
     }),
-    [currentUser, loading, login, register, logout, deleteAccount, refreshMe],
+    [currentUser, loading, hiveRefreshKey, incrementHiveRefreshKey, login, register, logout, deleteAccount, refreshMe],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
