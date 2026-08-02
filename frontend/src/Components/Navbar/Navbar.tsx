@@ -154,7 +154,9 @@ function Navbar() {
     }
 
     void pollUnreadMessages();
-    const interval = setInterval(() => { void pollUnreadMessages(); }, 5000);
+    const interval = setInterval(() => {
+      void pollUnreadMessages();
+    }, 5000);
     return () => clearInterval(interval);
   }, [currentUser]);
 
@@ -372,7 +374,10 @@ function Navbar() {
               <Link to="/messages" className="nav-messages-link">
                 messages
                 {unreadMessageCount > 0 ? (
-                  <span className="nav-messages-dot" aria-label={`${unreadMessageCount} unread messages`} />
+                  <span
+                    className="nav-messages-dot"
+                    aria-label={`${unreadMessageCount} unread messages`}
+                  />
                 ) : null}
               </Link>
             </li>

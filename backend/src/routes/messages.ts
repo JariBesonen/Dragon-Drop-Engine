@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { getList, getThread, getUnreadCount, send } from "../controllers/messagesController";
+import {
+  getList,
+  getThread,
+  getUnreadCount,
+  send,
+} from "../controllers/messagesController";
 
 const messagesRouter = Router();
 
