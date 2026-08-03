@@ -36,14 +36,14 @@
 }
 
 .login-prompt-link {
-  color: #2563eb;
+  color: var(--accent);
   text-decoration: none;
   font-weight: 600;
   transition: color 0.2s ease;
 }
 
 .login-prompt-link:hover {
-  color: #1d4ed8;
+  color: var(--accent-dark);
   text-decoration: underline;
 }
 

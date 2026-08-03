@@ -50,7 +50,7 @@
 
 .conversation-item.active {
   background-color: var(--surface-bg);
-  border-left-color: #ff5b00;
+  border-left-color: var(--accent);
 }
 
 .conversation-avatar {
@@ -144,7 +144,7 @@
 }
 
 .message.sent .message-text {
-  background-color: #ff5b00;
+  background-color: var(--accent);
   color: #fff;
   border-bottom-right-radius: 2px;
 }
@@ -186,12 +186,12 @@
 
 .message-input-field:focus {
   outline: none;
-  border-color: #0a7ea4;
+  border-color: var(--accent);
 }
 
 .message-send-button {
   padding: 10px 20px;
-  background-color: #0a7ea4;
+  background-color: var(--accent);
   color: white;
   border: none;
   border-radius: 4px;
@@ -201,7 +201,7 @@
 }
 
 .message-send-button:hover:not(:disabled) {
-  background-color: #065f87;
+  background-color: var(--accent-dark);
 }
 
 .message-send-button:disabled {

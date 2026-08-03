@@ -36,9 +36,9 @@
 }
 
 .side-nav a.active {
-  border-color: #ff5b00;
-  color: #b53d00;
-  background: #fff3ea;
+  border-color: var(--accent);
+  color: var(--accent-dark);
+  background: var(--accent-surface);
 }
 
 .side-placeholder {

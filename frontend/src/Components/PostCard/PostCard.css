@@ -98,9 +98,26 @@
 }
 
 .post-card-vote-button.active {
-  border-color: #ff5b00;
-  background: #fff3ea;
-  color: #b43e00;
+  border-color: var(--accent);
+  background: var(--accent-surface);
+  color: var(--accent-dark);
+}
+
+.post-card-save-button {
+  border: 1px solid var(--surface-border);
+  background: #ffffff;
+  color: var(--body-text);
+  padding: 0.35rem 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 8px;
+}
+
+.post-card-save-button.active {
+  border-color: var(--accent);
+  background: #ffffff;
+  color: var(--accent-dark);
 }
 
 .post-card-vote-button:disabled {
@@ -160,9 +177,9 @@
 }
 
 .post-card-comment-vote-button.active {
-  border-color: #ff5b00;
-  background: #fff3ea;
-  color: #b43e00;
+  border-color: var(--accent);
+  background: var(--accent-surface);
+  color: var(--accent-dark);
 }
 
 .post-card-comment-vote-button:disabled {
