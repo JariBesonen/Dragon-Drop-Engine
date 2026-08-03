@@ -63,6 +63,7 @@ function Navbar() {
   const [notificationsLoading, setNotificationsLoading] =
     useState<boolean>(false);
   const searchContainerRef = useRef<HTMLFormElement>(null);
+  const notificationsContainerRef = useRef<HTMLLIElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent): void {
@@ -79,6 +80,23 @@ function Navbar() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent): void {
+      if (
+        notificationsOpen &&
+        notificationsContainerRef.current &&
+        !notificationsContainerRef.current.contains(event.target as Node)
+      ) {
+        setNotificationsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [notificationsOpen]);
 
   useEffect(() => {
     const query = searchQuery.trim();
@@ -320,7 +338,7 @@ function Navbar() {
             <Link to="/create">create hive</Link>
           </li>
           {currentUser ? (
-            <li className="nav-notifications-item">
+            <li className="nav-notifications-item" ref={notificationsContainerRef}>
               <button
                 type="button"
                 className="nav-bell-button"
