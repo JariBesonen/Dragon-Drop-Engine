@@ -5,6 +5,7 @@ import {
   createOrReopenHiveFollowRequest,
   denyHiveFollowRequestById,
   createHive,
+  deleteHiveByOwner,
   getHiveFollowRequest,
   getHiveById,
   getHivesByOwnerId,
@@ -176,6 +177,35 @@ export async function getById(req: Request, res: Response): Promise<Response> {
     canViewPosts: !hive.is_private || joined,
     requestStatus,
   });
+}
+
+export async function remove(req: Request, res: Response): Promise<Response> {
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated." });
+  }
+
+  const hiveId = Number(req.params.id);
+  if (!Number.isInteger(hiveId) || hiveId <= 0) {
+    return res.status(400).json({ message: "Invalid hive id." });
+  }
+
+  const hive = await getHiveById(hiveId);
+  if (!hive) {
+    return res.status(404).json({ message: "Hive not found." });
+  }
+
+  if (hive.owner_user_id !== req.session.userId) {
+    return res
+      .status(403)
+      .json({ message: "You can only delete your own hive." });
+  }
+
+  const deletedHive = await deleteHiveByOwner(hiveId, req.session.userId);
+  if (!deletedHive) {
+    return res.status(404).json({ message: "Hive not found." });
+  }
+
+  return res.status(200).json({ message: "Hive deleted." });
 }
 
 export async function join(req: Request, res: Response): Promise<Response> {

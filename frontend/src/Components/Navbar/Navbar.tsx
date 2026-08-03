@@ -338,7 +338,10 @@ function Navbar() {
             <Link to="/create">create hive</Link>
           </li>
           {currentUser ? (
-            <li className="nav-notifications-item" ref={notificationsContainerRef}>
+            <li
+              className="nav-notifications-item"
+              ref={notificationsContainerRef}
+            >
               <button
                 type="button"
                 className="nav-bell-button"

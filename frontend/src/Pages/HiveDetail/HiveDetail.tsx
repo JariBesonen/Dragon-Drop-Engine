@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import PostCard from "../../Components/PostCard/PostCard";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -35,7 +35,8 @@ function resolveBannerSrc(bannerImage: string | null): string | null {
 
 export default function HiveDetail() {
   const { id } = useParams();
-  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  const { currentUser, incrementHiveRefreshKey } = useAuth();
   const [hive, setHive] = useState<ApiHive | null>(null);
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -49,6 +50,7 @@ export default function HiveDetail() {
   const [joinMessage, setJoinMessage] = useState<string>("");
   const [isJoining, setIsJoining] = useState<boolean>(false);
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState<boolean>(false);
+  const [isDeletingHive, setIsDeletingHive] = useState<boolean>(false);
   const [followRequests, setFollowRequests] = useState<ApiHiveFollowRequest[]>(
     [],
   );
@@ -245,6 +247,35 @@ export default function HiveDetail() {
     }
   }
 
+  async function handleDeleteHive(): Promise<void> {
+    if (!hive || !currentUser || currentUser.id !== hive.ownerUserId) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete "${hive.name}" and all of its posts? This cannot be undone.`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setIsDeletingHive(true);
+      setJoinMessage("");
+      await api.deleteHive(hive.id);
+      incrementHiveRefreshKey();
+      navigate("/explore", { replace: true });
+    } catch (caughtError) {
+      setJoinMessage(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to delete hive.",
+      );
+    } finally {
+      setIsDeletingHive(false);
+    }
+  }
+
   async function handleApproveRequest(requestId: number): Promise<void> {
     if (!hive) {
       return;
@@ -421,32 +452,34 @@ export default function HiveDetail() {
             </p>
           </div>
           <div className="hive-actions">
-            <button
-              type="button"
-              className="hive-follow-button"
-              disabled={
-                !currentUser || isJoining || followRequestStatus === "pending"
-              }
-              onClick={() => {
-                if (isJoined) {
-                  void handleUnjoinHive();
-                } else {
-                  void handleJoinHive();
+            {!isOwner ? (
+              <button
+                type="button"
+                className="hive-follow-button"
+                disabled={
+                  !currentUser || isJoining || followRequestStatus === "pending"
                 }
-              }}
-            >
-              {isJoined
-                ? isJoining
-                  ? "Leaving..."
-                  : "Leave Hive"
-                : isJoining
-                  ? "Submitting..."
-                  : followRequestStatus === "pending"
-                    ? "Request Pending"
-                    : hive.isPrivate
-                      ? "Request to Join"
-                      : "Join Hive"}
-            </button>
+                onClick={() => {
+                  if (isJoined) {
+                    void handleUnjoinHive();
+                  } else {
+                    void handleJoinHive();
+                  }
+                }}
+              >
+                {isJoined
+                  ? isJoining
+                    ? "Leaving..."
+                    : "Leave Hive"
+                  : isJoining
+                    ? "Submitting..."
+                    : followRequestStatus === "pending"
+                      ? "Request Pending"
+                      : hive.isPrivate
+                        ? "Request to Join"
+                        : "Join Hive"}
+              </button>
+            ) : null}
             <button
               type="button"
               className="hive-create-post-button"
@@ -458,20 +491,32 @@ export default function HiveDetail() {
               Create Post
             </button>
             {isOwner ? (
-              <button
-                type="button"
-                className="hive-privacy-toggle-button"
-                disabled={isUpdatingPrivacy}
-                onClick={() => {
-                  void handleTogglePrivacy();
-                }}
-              >
-                {isUpdatingPrivacy
-                  ? "Updating..."
-                  : hive.isPrivate
-                    ? "Set Public"
-                    : "Set Private"}
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="hive-delete-button"
+                  disabled={isDeletingHive}
+                  onClick={() => {
+                    void handleDeleteHive();
+                  }}
+                >
+                  {isDeletingHive ? "Deleting..." : "Delete Hive"}
+                </button>
+                <button
+                  type="button"
+                  className="hive-privacy-toggle-button"
+                  disabled={isUpdatingPrivacy}
+                  onClick={() => {
+                    void handleTogglePrivacy();
+                  }}
+                >
+                  {isUpdatingPrivacy
+                    ? "Updating..."
+                    : hive.isPrivate
+                      ? "Set Public"
+                      : "Set Private"}
+                </button>
+              </>
             ) : null}
           </div>
         </header>

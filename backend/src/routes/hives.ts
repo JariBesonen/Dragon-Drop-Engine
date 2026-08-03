@@ -8,6 +8,7 @@ import {
   getJoined,
   getMine,
   join,
+  remove,
   unjoin,
   updatePrivacy,
 } from "../controllers/hivesController";
@@ -24,6 +25,7 @@ hivesRouter.get("/me", getMine);
 hivesRouter.get("/joined", getJoined);
 hivesRouter.post("/:id/join", join);
 hivesRouter.delete("/:id/join", unjoin);
+hivesRouter.delete("/:id", remove);
 hivesRouter.patch("/:id/privacy", updatePrivacy);
 hivesRouter.get("/:id/follow-requests", getFollowRequests);
 hivesRouter.post(

@@ -83,6 +83,14 @@
   padding: 0.5rem 0.85rem;
 }
 
+.hive-delete-button {
+  border: 1px solid #f3b8a5;
+  background: #fff4ee;
+  color: #a33a23;
+  border-radius: 10px;
+  padding: 0.5rem 0.85rem;
+}
+
 .hive-privacy-toggle-button {
   border: 1px solid var(--surface-border);
   background: var(--surface-bg);
@@ -91,6 +99,7 @@
   padding: 0.5rem 0.85rem;
 }
 
+.hive-delete-button:disabled,
 .hive-privacy-toggle-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;

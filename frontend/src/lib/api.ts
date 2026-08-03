@@ -306,6 +306,10 @@ export const api = {
   getMyHives: () => request<{ hives: ApiHive[] }>("/api/hives/me"),
   getJoinedHives: () => request<{ hives: ApiHive[] }>("/api/hives/joined"),
   getHive: (id: number) => request<ApiHiveDetailResult>(`/api/hives/${id}`),
+  deleteHive: (id: number) =>
+    request<{ message: string }>(`/api/hives/${id}`, {
+      method: "DELETE",
+    }),
   joinHive: (id: number) =>
     request<{
       message: string;

@@ -90,6 +90,20 @@ export async function getHiveById(id: number): Promise<HiveRow | null> {
   return rows[0] ?? null;
 }
 
+export async function deleteHiveByOwner(
+  hiveId: number,
+  ownerUserId: number,
+): Promise<HiveRow | null> {
+  const rows = await query<HiveRow>(
+    `DELETE FROM hives
+     WHERE id = $1 AND owner_user_id = $2
+     RETURNING *`,
+    [hiveId, ownerUserId],
+  );
+
+  return rows[0] ?? null;
+}
+
 export async function isUserJoinedHive(
   userId: number,
   hiveId: number,
