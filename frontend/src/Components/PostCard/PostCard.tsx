@@ -594,10 +594,10 @@ export default function PostCard({
             to={`/hive/${post.hiveId}`}
             className="post-card-community-link"
           >
-            c/{post.community}
+            {post.community}
           </Link>
         ) : (
-          <span>c/{post.community}</span>
+          <span>{post.community}</span>
         )}
         <div className="post-card-meta-actions">
           <span className="post-card-author">@{post.authorUsername}</span>

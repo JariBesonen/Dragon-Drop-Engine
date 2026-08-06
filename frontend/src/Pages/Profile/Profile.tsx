@@ -516,7 +516,7 @@ export default function Profile() {
         >
           <header>
             <p className="profile-comment-community">
-              c/{comment.postCommunity}
+              {comment.postCommunity}
             </p>
             <p className="profile-comment-meta">
               {formatDate(comment.createdAt)}
@@ -535,7 +535,7 @@ export default function Profile() {
         <header>
           <div>
             <p className="profile-comment-community">
-              c/{comment.postCommunity}
+              {comment.postCommunity}
             </p>
             <p className="profile-comment-meta">
               {formatDate(comment.createdAt)}
@@ -722,7 +722,7 @@ export default function Profile() {
                             <article className="profile-post-card profile-link-card">
                               <header>
                                 <p className="profile-post-community">
-                                  c/{item.post.community}
+                                  {item.post.community}
                                 </p>
                                 <p className="profile-post-meta">
                                   {formatDate(item.post.createdAt)}
@@ -752,7 +752,7 @@ export default function Profile() {
                           <header>
                             <div>
                               <p className="profile-post-community">
-                                c/{item.post.community}
+                                {item.post.community}
                               </p>
                               <p className="profile-post-meta">
                                 {formatDate(item.post.createdAt)}
@@ -817,7 +817,7 @@ export default function Profile() {
                           <article className="profile-post-card profile-link-card">
                             <header>
                               <p className="profile-post-community">
-                                c/{post.community}
+                                {post.community}
                               </p>
                               <p className="profile-post-meta">
                                 {formatDate(post.createdAt)}
@@ -842,7 +842,7 @@ export default function Profile() {
                         <header>
                           <div>
                             <p className="profile-post-community">
-                              c/{post.community}
+                              {post.community}
                             </p>
                             <p className="profile-post-meta">
                               {formatDate(post.createdAt)}
@@ -913,7 +913,7 @@ export default function Profile() {
                         <article className="profile-post-card profile-link-card">
                           <header>
                             <p className="profile-post-community">
-                              c/{post.community}
+                              {post.community}
                             </p>
                             <p className="profile-post-meta">
                               {formatDate(post.createdAt)}
@@ -989,7 +989,7 @@ export default function Profile() {
                   <ul>
                     {profile.ownedHives.map((hive) => (
                       <li key={hive.id}>
-                        <Link to={`/hive/${hive.id}`}>c/{hive.name}</Link>
+                        <Link to={`/hive/${hive.id}`}>{hive.name}</Link>
                       </li>
                     ))}
                   </ul>
