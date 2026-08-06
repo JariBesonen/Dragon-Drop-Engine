@@ -106,7 +106,7 @@
 .post-card-save-button {
   border: 1px solid var(--surface-border);
   background: #ffffff;
-  color: var(--body-text);
+  color: #000000;
   padding: 0.35rem 0.7rem;
   display: inline-flex;
   align-items: center;
@@ -117,7 +117,7 @@
 .post-card-save-button.active {
   border-color: var(--accent);
   background: #ffffff;
-  color: var(--accent-dark);
+  color: #000000;
 }
 
 .post-card-vote-button:disabled {
