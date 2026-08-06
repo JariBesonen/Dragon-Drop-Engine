@@ -702,7 +702,7 @@ export default function PostCard({
         </>
       )}
 
-      <small>{formatDate(post.createdAt)}</small>
+      <small>{formatRelativeTime(post.createdAt)}</small>
       {deleteMessage ? (
         <p className="post-card-delete-message">{deleteMessage}</p>
       ) : null}
