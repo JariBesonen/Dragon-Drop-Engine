@@ -451,20 +451,6 @@ export default function PostCard({
           <p className={isDeletedComment ? "post-card-comment-deleted" : ""}>
             {isDeletedComment ? "Comment deleted" : comment.content}
           </p>
-          {!isDeletedComment ? (
-            <button
-              type="button"
-              className="post-card-comment-reply-button"
-              onClick={() => {
-                setOpenReplyForId((current) =>
-                  current === comment.id ? null : comment.id,
-                );
-              }}
-              disabled={!currentUser}
-            >
-              Reply
-            </button>
-          ) : null}
 
           {isDeletedComment && hasReplies ? (
             <button
@@ -506,6 +492,18 @@ export default function PostCard({
                 aria-pressed={comment.userVote === -1}
               >
                 Dislike <span>{comment.dislikeCount}</span>
+              </button>
+              <button
+                type="button"
+                className="post-card-comment-reply-button"
+                onClick={() => {
+                  setOpenReplyForId((current) =>
+                    current === comment.id ? null : comment.id,
+                  );
+                }}
+                disabled={!currentUser}
+              >
+                Reply
               </button>
             </div>
           ) : null}

@@ -161,7 +161,8 @@
 .post-card-comment-vote-row {
   display: flex;
   gap: 0.4rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
 }
 
 .post-card-comment-vote-button {
