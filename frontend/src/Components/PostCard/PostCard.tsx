@@ -28,6 +28,45 @@ function formatDate(isoDate: string): string {
   return new Date(isoDate).toLocaleString();
 }
 
+function formatRelativeTime(isoDate: string): string {
+  const date = new Date(isoDate);
+  const time = date.getTime();
+
+  if (Number.isNaN(time)) {
+    return formatDate(isoDate);
+  }
+
+  const diffInSeconds = Math.floor((Date.now() - time) / 1000);
+  if (diffInSeconds < 5) {
+    return "just now";
+  }
+
+  const units: Array<{ max: number; value: number; label: string }> = [
+    { max: 60, value: 1, label: "second" },
+    { max: 60 * 60, value: 60, label: "minute" },
+    { max: 60 * 60 * 24, value: 60 * 60, label: "hour" },
+    { max: 60 * 60 * 24 * 7, value: 60 * 60 * 24, label: "day" },
+    { max: 60 * 60 * 24 * 30, value: 60 * 60 * 24 * 7, label: "week" },
+    { max: 60 * 60 * 24 * 365, value: 60 * 60 * 24 * 30, label: "month" },
+    {
+      max: Number.POSITIVE_INFINITY,
+      value: 60 * 60 * 24 * 365,
+      label: "year",
+    },
+  ];
+
+  const absSeconds = Math.abs(diffInSeconds);
+  const unit = units.find((candidate) => absSeconds < candidate.max) || units[0];
+  const amount = Math.floor(absSeconds / unit.value);
+  const suffix = amount === 1 ? "" : "s";
+
+  if (diffInSeconds >= 0) {
+    return `${amount} ${unit.label}${suffix} ago`;
+  }
+
+  return `in ${amount} ${unit.label}${suffix}`;
+}
+
 export default function PostCard({
   post,
   hideComments = false,
@@ -431,7 +470,7 @@ export default function PostCard({
               {isDeletedComment ? "[deleted]" : `@${comment.authorUsername}`}
             </span>
             <div className="post-card-comment-meta-actions">
-              <small>{formatDate(comment.createdAt)}</small>
+              <small>{formatRelativeTime(comment.createdAt)}</small>
               {currentUser?.id === comment.userId && !isDeletedComment ? (
                 <button
                   type="button"
