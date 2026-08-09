@@ -25,6 +25,9 @@ import {
 } from "../models/postsModel";
 import { isPostSaved, savePost, unsavePost } from "../models/profileModel";
 
+const MAX_POST_CONTENT_LENGTH = 2000;
+const MAX_COMMENT_CONTENT_LENGTH = 1000;
+
 export async function explore(req: Request, res: Response): Promise<Response> {
   const posts = await getRecommendedPosts(req.session.userId);
   return res.status(200).json({ posts: posts.map(mapPost) });
@@ -61,6 +64,10 @@ export async function create(req: Request, res: Response): Promise<Response> {
 
   if (!resolvedCaption) {
     return res.status(400).json({ message: "Caption is required." });
+  }
+
+  if (resolvedCaption.length > MAX_POST_CONTENT_LENGTH) {
+    return res.status(400).json({ message: "Caption is too long." });
   }
 
   const hive = await getHiveById(hiveId);
@@ -296,6 +303,10 @@ export async function addComment(
   const content = typeof rawContent === "string" ? rawContent.trim() : "";
   if (!content) {
     return res.status(400).json({ message: "Comment content is required." });
+  }
+
+  if (content.length > MAX_COMMENT_CONTENT_LENGTH) {
+    return res.status(400).json({ message: "Comment is too long." });
   }
 
   const rawParentCommentId = (req.body as { parentCommentId?: unknown })

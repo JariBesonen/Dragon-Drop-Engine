@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../lib/api";
@@ -17,50 +17,70 @@ export function Messages() {
   const [messageContent, setMessageContent] = useState("");
   const [error, setError] = useState<string | null>(null);
   const messageListRef = useRef<HTMLDivElement>(null);
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const loadConversations = useCallback(async () => {
+    if (!currentUser) return;
+
+    try {
+      const result = await api.getConversationList();
+      setConversations(result.conversations);
+      setError(null);
+    } catch {
+      setError("Failed to load conversations");
+    }
+  }, [currentUser]);
+
+  const loadMessages = useCallback(async () => {
+    if (!currentUser || !selectedUserId) return;
+
+    try {
+      const result = await api.getConversation(selectedUserId);
+      setMessages(result.messages.reverse());
+      setError(null);
+    } catch {
+      setError("Failed to load messages");
+    }
+  }, [currentUser, selectedUserId]);
 
   useEffect(() => {
     if (!currentUser) return;
-    loadConversations();
-    const interval = setInterval(loadConversations, 3000);
-    pollIntervalRef.current = interval;
-    return () => clearInterval(interval);
-  }, [currentUser]);
+
+    const initialFetch = setTimeout(() => {
+      void loadConversations();
+    }, 0);
+
+    const interval = setInterval(() => {
+      void loadConversations();
+    }, 3000);
+
+    return () => {
+      clearTimeout(initialFetch);
+      clearInterval(interval);
+    };
+  }, [currentUser, loadConversations]);
 
   useEffect(() => {
     if (!currentUser || !selectedUserId) return;
-    loadMessages();
-    const interval = setInterval(loadMessages, 2000);
-    pollIntervalRef.current = interval;
-    return () => clearInterval(interval);
-  }, [currentUser, selectedUserId]);
+
+    const initialFetch = setTimeout(() => {
+      void loadMessages();
+    }, 0);
+
+    const interval = setInterval(() => {
+      void loadMessages();
+    }, 2000);
+
+    return () => {
+      clearTimeout(initialFetch);
+      clearInterval(interval);
+    };
+  }, [currentUser, selectedUserId, loadMessages]);
 
   useEffect(() => {
     if (messageListRef.current) {
       messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
     }
   }, [messages]);
-
-  const loadConversations = async () => {
-    try {
-      const result = await api.getConversationList();
-      setConversations(result.conversations);
-      setError(null);
-    } catch (err) {
-      setError("Failed to load conversations");
-    }
-  };
-
-  const loadMessages = async () => {
-    if (!selectedUserId) return;
-    try {
-      const result = await api.getConversation(selectedUserId);
-      setMessages(result.messages.reverse());
-      setError(null);
-    } catch (err) {
-      setError("Failed to load messages");
-    }
-  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +94,7 @@ export function Messages() {
       setMessages((prev) => [...prev, response.message]);
       setMessageContent("");
       await loadConversations();
-    } catch (err) {
+    } catch {
       setError("Failed to send message");
     }
   };

@@ -9,6 +9,9 @@ import {
 } from "../models/authModel";
 import { hashPassword, verifyPassword } from "../utils/password";
 
+const MAX_USERNAME_LENGTH = 40;
+const MAX_EMAIL_LENGTH = 120;
+
 export async function register(req: Request, res: Response): Promise<Response> {
   const { username, email, password } = req.body as {
     username?: string;
@@ -22,13 +25,33 @@ export async function register(req: Request, res: Response): Promise<Response> {
       .json({ message: "Username, email, and password are required." });
   }
 
+  const normalizedUsername = username.trim();
+  const normalizedEmail = email.trim();
+
+  if (!normalizedUsername || !normalizedEmail) {
+    return res
+      .status(400)
+      .json({ message: "Username and email are required." });
+  }
+
+  if (normalizedUsername.length > MAX_USERNAME_LENGTH) {
+    return res.status(400).json({ message: "Username is too long." });
+  }
+
+  if (normalizedEmail.length > MAX_EMAIL_LENGTH) {
+    return res.status(400).json({ message: "Email is too long." });
+  }
+
   if (password.length < 6) {
     return res
       .status(400)
       .json({ message: "Password must be at least 6 characters long." });
   }
 
-  const existingUser = await findUserByUsernameOrEmail(username, email);
+  const existingUser = await findUserByUsernameOrEmail(
+    normalizedUsername,
+    normalizedEmail,
+  );
   if (existingUser) {
     return res
       .status(409)
@@ -36,7 +59,11 @@ export async function register(req: Request, res: Response): Promise<Response> {
   }
 
   const passwordHash = hashPassword(password);
-  const user = await createUser(username, email, passwordHash);
+  const user = await createUser(
+    normalizedUsername,
+    normalizedEmail,
+    passwordHash,
+  );
   req.session.userId = user.id;
 
   return res.status(201).json({ user: sanitizeUser(user) });
@@ -54,7 +81,12 @@ export async function login(req: Request, res: Response): Promise<Response> {
       .json({ message: "Identity and password are required." });
   }
 
-  const user = await findUserByIdentity(identity);
+  const normalizedIdentity = identity.trim();
+  if (!normalizedIdentity) {
+    return res.status(400).json({ message: "Identity is required." });
+  }
+
+  const user = await findUserByIdentity(normalizedIdentity);
   if (!user || !verifyPassword(password, user.password_hash)) {
     return res.status(401).json({ message: "Invalid credentials." });
   }

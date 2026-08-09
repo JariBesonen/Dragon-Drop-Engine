@@ -60,7 +60,6 @@ function AppLayout() {
             }
           />
         </Routes>
-
       </div>
     </div>
   );

@@ -192,7 +192,7 @@ export default function PostCard({
         await api.savePost(post.id);
       }
       setIsSaved(!isSaved);
-    } catch (caughtError) {
+    } catch {
       // Silently fail for now
     } finally {
       setIsSaving(false);

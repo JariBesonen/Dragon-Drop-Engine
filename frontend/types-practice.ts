@@ -1,22 +1,34 @@
-type UserRole = ["user", "moderator", "admin"];
+type UserRole = "user" | "moderator" | "admin";
+type PostStatus = "draft" | "published" | "removed";
 
-const roles: UserRole
 type User = {
-    id: 2,
-    username: "jari",
-    role: "admin",
-    isActive: true
+  id: number;
+  username: string;
+  role: UserRole;
+  isActive: boolean;
 };
-
-type PostStatus = ["draft", "published", "removed"];
 
 type Post = {
-    id: 3,
-    title: 'beans',
-    author: 'stefan',
-    status: 'idk'
+  id: number;
+  title: string;
+  author: string;
+  status: PostStatus;
 };
 
-let currentUser = User;
+const _ROLES: UserRole[] = ["user", "moderator", "admin"];
 
+const _CURRENT_USER: User = {
+  id: 2,
+  username: "jari",
+  role: "admin",
+  isActive: true,
+};
 
+const _SAMPLE_POST: Post = {
+  id: 3,
+  title: "beans",
+  author: "stefan",
+  status: "draft",
+};
+
+export {};

@@ -10,6 +10,8 @@ import {
 } from "../models/messagesModel";
 import { getProfileUserById } from "../models/profileModel";
 
+const MAX_MESSAGE_LENGTH = 1000;
+
 export async function send(req: Request, res: Response): Promise<Response> {
   if (!req.session.userId) {
     return res.status(401).json({ message: "Not authenticated." });
@@ -23,6 +25,10 @@ export async function send(req: Request, res: Response): Promise<Response> {
   const content = (req.body as { content?: string }).content;
   if (typeof content !== "string" || !content.trim()) {
     return res.status(400).json({ message: "Message content is required." });
+  }
+
+  if (content.trim().length > MAX_MESSAGE_LENGTH) {
+    return res.status(400).json({ message: "Message is too long." });
   }
 
   if (req.session.userId === recipientUserId) {

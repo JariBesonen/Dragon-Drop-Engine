@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -98,7 +98,7 @@ export default function Profile() {
 
   const resolvedUsername = username ?? currentUser?.username ?? "";
 
-  async function loadProfile(): Promise<void> {
+  const loadProfile = useCallback(async (): Promise<void> => {
     if (!resolvedUsername) {
       setProfile(null);
       setFollowerCount(0);
@@ -126,7 +126,7 @@ export default function Profile() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [resolvedUsername]);
 
   const overviewItems = useMemo(() => {
     if (!profile) {
@@ -160,7 +160,7 @@ export default function Profile() {
 
   useEffect(() => {
     void loadProfile();
-  }, [resolvedUsername]);
+  }, [loadProfile]);
 
   useEffect(() => {
     if (!profile || currentUser?.id !== profile.user.id) {

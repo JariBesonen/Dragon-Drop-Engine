@@ -6,13 +6,19 @@ import {
   me,
   register,
 } from "../controllers/authController";
+import { createRateLimitMiddleware } from "../middleware/rateLimit";
 
 const authRouter = Router();
+const authRateLimit = createRateLimitMiddleware({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: "Too many authentication requests. Please try again later.",
+});
 
-authRouter.post("/register", register);
-authRouter.post("/login", login);
-authRouter.post("/logout", logout);
+authRouter.post("/register", authRateLimit, register);
+authRouter.post("/login", authRateLimit, login);
+authRouter.post("/logout", authRateLimit, logout);
 authRouter.get("/me", me);
-authRouter.delete("/account", deleteAccount);
+authRouter.delete("/account", authRateLimit, deleteAccount);
 
 export default authRouter;

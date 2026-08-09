@@ -171,11 +171,22 @@ function Navbar() {
       }
     }
 
+    function refreshWhenVisible(): void {
+      if (document.visibilityState === "visible") {
+        void pollUnreadMessages();
+      }
+    }
+
     void pollUnreadMessages();
     const interval = setInterval(() => {
-      void pollUnreadMessages();
-    }, 5000);
-    return () => clearInterval(interval);
+      void refreshWhenVisible();
+    }, 15000);
+
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, [currentUser]);
 
   const trimmedQuery = searchQuery.trim();

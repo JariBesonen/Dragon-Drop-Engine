@@ -28,6 +28,10 @@ if (isProduction && !sessionSecret) {
   throw new Error("SESSION_SECRET must be set in production.");
 }
 
+if (isProduction) {
+  app.set("trust proxy", 1);
+}
+
 // Middleware
 app.use(
   helmet({
@@ -54,6 +58,7 @@ app.use(
     cookie: {
       secure: isProduction,
       httpOnly: true,
+      sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
   }),
@@ -62,6 +67,14 @@ app.use(
 // Routes
 app.get("/", (_req: Request, res: Response) => {
   res.json({ message: "Hive API is running." });
+});
+
+app.get("/healthz", (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: "ok",
+    uptimeSeconds: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+  });
 });
 
 app.use("/api/auth", authRouter);
