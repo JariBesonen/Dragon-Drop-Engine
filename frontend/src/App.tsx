@@ -46,8 +46,21 @@ function AppLayout() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route
+            path="*"
+            element={
+              <main className="home-page">
+                <section className="home-shell">
+                  <h2>Page not found</h2>
+                  <p className="home-description">
+                    The page you requested does not exist.
+                  </p>
+                </section>
+              </main>
+            }
+          />
         </Routes>
-       
+
       </div>
     </div>
   );

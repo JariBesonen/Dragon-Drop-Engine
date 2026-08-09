@@ -55,7 +55,7 @@ export default function Explore() {
         </p>
         {query ? (
           <p className="feed-query">
-            Showing results for “{searchParams.get("q")}"
+            Showing results for "{searchParams.get("q")}" 
           </p>
         ) : null}
         {error ? <p className="feed-error">{error}</p> : null}

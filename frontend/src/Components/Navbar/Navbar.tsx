@@ -317,7 +317,6 @@ function Navbar() {
                       clearSearch();
                     }}
                   >
-                    <span className="nav-search-avatar">r/</span>
                     <span>
                       <strong>{hive.name}</strong>
                       <small>{hive.description}</small>
