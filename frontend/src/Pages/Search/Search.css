@@ -168,6 +168,18 @@
   flex-shrink: 0;
 }
 
+.search-user-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-surface);
+  color: var(--accent-dark);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .search-user-info {
   flex: 1;
   display: flex;

@@ -14,6 +14,36 @@ interface SearchUser {
 
 type SearchFilter = "all" | "hives" | "users" | "posts";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+function resolveAvatarSrc(mediaUrl: string | null): string | null {
+  if (!mediaUrl) {
+    return null;
+  }
+
+  if (
+    mediaUrl.startsWith("http://") ||
+    mediaUrl.startsWith("https://") ||
+    mediaUrl.startsWith("data:") ||
+    mediaUrl.startsWith("blob:")
+  ) {
+    return mediaUrl;
+  }
+
+  return `${API_BASE_URL}${mediaUrl.startsWith("/") ? mediaUrl : `/${mediaUrl}`}`;
+}
+
+function getAvatarInitials(displayName: string, username: string): string {
+  const source = displayName.trim() || username.trim() || "?";
+  const words = source.split(/\s+/).filter(Boolean);
+
+  if (words.length >= 2) {
+    return `${words[0][0]}${words[1][0]}`.toUpperCase();
+  }
+
+  return source.slice(0, 2).toUpperCase();
+}
+
 export default function Search() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q")?.trim() || "";
@@ -23,6 +53,9 @@ export default function Search() {
   const [allPosts, setAllPosts] = useState<ApiPost[]>([]);
   const [hives, setHives] = useState<ApiHive[]>([]);
   const [users, setUsers] = useState<SearchUser[]>([]);
+  const [brokenAvatarByUserId, setBrokenAvatarByUserId] = useState<
+    Record<number, boolean>
+  >({});
   const [activeFilter, setActiveFilter] = useState<SearchFilter>("all");
 
   function toggleFilter(nextFilter: Exclude<SearchFilter, "all">): void {
@@ -68,6 +101,7 @@ export default function Search() {
 
   useEffect(() => {
     setActiveFilter("all");
+    setBrokenAvatarByUserId({});
   }, [query]);
 
   const normalizedQuery = query.toLowerCase();
@@ -189,12 +223,31 @@ export default function Search() {
                         className="search-user-card"
                         to={`/profile/${user.username}`}
                       >
-                        {user.avatarUrl && (
+                        {user.avatarUrl && !brokenAvatarByUserId[user.id] ? (
                           <img
-                            src={user.avatarUrl}
+                            src={resolveAvatarSrc(user.avatarUrl) || ""}
                             alt={user.displayName}
                             className="search-user-avatar"
+                            onError={() => {
+                              setBrokenAvatarByUserId((current) => {
+                                if (current[user.id]) {
+                                  return current;
+                                }
+
+                                return {
+                                  ...current,
+                                  [user.id]: true,
+                                };
+                              });
+                            }}
                           />
+                        ) : (
+                          <div
+                            className="search-user-avatar search-user-avatar-fallback"
+                            aria-hidden="true"
+                          >
+                            {getAvatarInitials(user.displayName, user.username)}
+                          </div>
                         )}
                         <div className="search-user-info">
                           <h4>{user.displayName}</h4>
