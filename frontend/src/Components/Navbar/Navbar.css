@@ -5,7 +5,7 @@ nav {
   top: 0;
   left: 0;
   display: grid;
-  grid-template-columns: auto minmax(260px, 520px) auto;
+  grid-template-columns: auto minmax(260px, 620px) auto;
   align-items: center;
   justify-content: space-between;
   background-color: var(--surface-bg);
@@ -33,9 +33,10 @@ h1 {
 
 nav ul {
   display: flex;
-  gap: 1rem;
+  gap: 2rem;
   color: var(--body-text);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
 }
 
 nav ul li {
@@ -43,6 +44,13 @@ nav ul li {
   text-decoration: none;
   font-size: 1rem;
   position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+nav ul li > a {
+  display: inline-flex;
+  align-items: center;
 }
 
 a {
@@ -55,7 +63,8 @@ a {
   display: flex;
   align-items: stretch;
   gap: 0.4rem;
-  width: 100%;
+  width: calc(100% - (var(--side-nav-width) / 2 + 4rem));
+  margin-left: calc(var(--side-nav-width) / 2 + 4rem);
 }
 
 .nav-search-field {
@@ -191,6 +200,7 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
   cursor: pointer;
 }
 
@@ -262,7 +272,7 @@ a {
 .auth-controls {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 2rem;
   color: var(--body-text);
 }
 
@@ -270,7 +280,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 1rem;
+  gap: 2rem;
 }
 
 .auth-links {
@@ -311,6 +321,7 @@ a {
 
   .nav-search {
     width: 100%;
+    margin-left: 0;
     margin: 0;
   }
 
