@@ -81,6 +81,21 @@ a {
   color: var(--body-text);
 }
 
+.nav-search input[type="search"]::-webkit-search-decoration,
+.nav-search input[type="search"]::-webkit-search-cancel-button,
+.nav-search input[type="search"]::-webkit-search-results-button,
+.nav-search input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.nav-search input[type="search"]::-ms-clear,
+.nav-search input[type="search"]::-ms-reveal {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 .nav-search-clear {
   position: absolute;
   right: 0.3rem;
