@@ -12,6 +12,8 @@ interface SearchUser {
   bio: string | null;
 }
 
+type SearchFilter = "all" | "hives" | "users" | "posts";
+
 export default function Search() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q")?.trim() || "";
@@ -21,6 +23,13 @@ export default function Search() {
   const [allPosts, setAllPosts] = useState<ApiPost[]>([]);
   const [hives, setHives] = useState<ApiHive[]>([]);
   const [users, setUsers] = useState<SearchUser[]>([]);
+  const [activeFilter, setActiveFilter] = useState<SearchFilter>("all");
+
+  function toggleFilter(nextFilter: Exclude<SearchFilter, "all">): void {
+    setActiveFilter((current) =>
+      current === nextFilter ? "all" : nextFilter,
+    );
+  }
 
   useEffect(() => {
     async function loadResults(): Promise<void> {
@@ -57,6 +66,10 @@ export default function Search() {
     void loadResults();
   }, [query]);
 
+  useEffect(() => {
+    setActiveFilter("all");
+  }, [query]);
+
   const normalizedQuery = query.toLowerCase();
 
   const postResults = useMemo(() => {
@@ -85,12 +98,70 @@ export default function Search() {
     hives.length === 0 &&
     users.length === 0;
 
+  const totalResults = postResults.length + hives.length + users.length;
+  const resultsLabel = totalResults === 1 ? "result" : "results";
+
+  const showUsers = activeFilter === "all" || activeFilter === "users";
+  const showHives = activeFilter === "all" || activeFilter === "hives";
+  const showPosts = activeFilter === "all" || activeFilter === "posts";
+
   return (
     <main className="search-page">
       <section className="search-shell">
-        <h2>Search</h2>
+        <div className="search-header-row">
+          <h2>Search</h2>
+          {query ? (
+            <div className="search-filter-wrap">
+              <p className="search-filter-label">Filter results</p>
+              <div
+                className="search-filter-nav"
+                role="navigation"
+                aria-label="Filter search results"
+              >
+                <button
+                  type="button"
+                  className={`search-filter-button ${
+                    activeFilter === "posts" ? "active" : ""
+                  }`}
+                  onClick={() => {
+                    toggleFilter("posts");
+                  }}
+                  aria-pressed={activeFilter === "posts"}
+                >
+                  Posts
+                </button>
+                <button
+                  type="button"
+                  className={`search-filter-button ${
+                    activeFilter === "hives" ? "active" : ""
+                  }`}
+                  onClick={() => {
+                    toggleFilter("hives");
+                  }}
+                  aria-pressed={activeFilter === "hives"}
+                >
+                  Hives
+                </button>
+                <button
+                  type="button"
+                  className={`search-filter-button ${
+                    activeFilter === "users" ? "active" : ""
+                  }`}
+                  onClick={() => {
+                    toggleFilter("users");
+                  }}
+                  aria-pressed={activeFilter === "users"}
+                >
+                  Users
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
         {query ? (
-          <p className="search-query">Results for "{query}"</p>
+          <p className="search-query">
+            {totalResults} {resultsLabel} for "{query}"
+          </p>
         ) : (
           <p className="search-query">
             Type in the search bar to find posts, communities, and users.
@@ -105,68 +176,76 @@ export default function Search() {
 
         {!error && query ? (
           <>
-            {users.length > 0 ? (
+            {showUsers && (users.length > 0 || activeFilter === "users") ? (
               <section className="search-section">
                 <h3>Users</h3>
-                <div className="search-user-list">
-                  {users.map((user: SearchUser) => (
-                    <Link
-                      key={user.id}
-                      className="search-user-card"
-                      to={`/profile/${user.username}`}
-                    >
-                      {user.avatarUrl && (
-                        <img
-                          src={user.avatarUrl}
-                          alt={user.displayName}
-                          className="search-user-avatar"
-                        />
-                      )}
-                      <div className="search-user-info">
-                        <h4>{user.displayName}</h4>
-                        <p className="search-user-username">@{user.username}</p>
-                        {user.bio && (
-                          <p className="search-user-bio">{user.bio}</p>
+                {users.length === 0 ? (
+                  <p className="search-state">No users matched.</p>
+                ) : (
+                  <div className="search-user-list">
+                    {users.map((user: SearchUser) => (
+                      <Link
+                        key={user.id}
+                        className="search-user-card"
+                        to={`/profile/${user.username}`}
+                      >
+                        {user.avatarUrl && (
+                          <img
+                            src={user.avatarUrl}
+                            alt={user.displayName}
+                            className="search-user-avatar"
+                          />
                         )}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                        <div className="search-user-info">
+                          <h4>{user.displayName}</h4>
+                          <p className="search-user-username">@{user.username}</p>
+                          {user.bio && (
+                            <p className="search-user-bio">{user.bio}</p>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </section>
             ) : null}
 
-            <section className="search-section">
-              <h3>Hives</h3>
-              {hives.length === 0 ? (
-                <p className="search-state">No hives matched.</p>
-              ) : (
-                <div className="search-hive-list">
-                  {hives.map((hive: ApiHive) => (
-                    <Link
-                      key={hive.id}
-                      className="search-hive-card"
-                      to={`/hive/${hive.id}`}
-                    >
-                      <h4>{hive.name}</h4>
-                      <p>{hive.description}</p>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </section>
+            {showHives ? (
+              <section className="search-section">
+                <h3>Hives</h3>
+                {hives.length === 0 ? (
+                  <p className="search-state">No hives matched.</p>
+                ) : (
+                  <div className="search-hive-list">
+                    {hives.map((hive: ApiHive) => (
+                      <Link
+                        key={hive.id}
+                        className="search-hive-card"
+                        to={`/hive/${hive.id}`}
+                      >
+                        <h4>{hive.name}</h4>
+                        <p>{hive.description}</p>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </section>
+            ) : null}
 
-            <section className="search-section">
-              <h3>Posts</h3>
-              {postResults.length === 0 ? (
-                <p className="search-state">No posts matched.</p>
-              ) : (
-                <div className="search-post-list">
-                  {postResults.map((post: ApiPost) => (
-                    <PostCard key={post.id} post={post} />
-                  ))}
-                </div>
-              )}
-            </section>
+            {showPosts ? (
+              <section className="search-section">
+                <h3>Posts</h3>
+                {postResults.length === 0 ? (
+                  <p className="search-state">No posts matched.</p>
+                ) : (
+                  <div className="search-post-list">
+                    {postResults.map((post: ApiPost) => (
+                      <PostCard key={post.id} post={post} />
+                    ))}
+                  </div>
+                )}
+              </section>
+            ) : null}
           </>
         ) : null}
       </section>
