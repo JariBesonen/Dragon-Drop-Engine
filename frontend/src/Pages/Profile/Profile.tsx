@@ -515,9 +515,7 @@ export default function Profile() {
           className="profile-comment-card profile-link-card"
         >
           <header>
-            <p className="profile-comment-community">
-              {comment.postCommunity}
-            </p>
+            <p className="profile-comment-community">{comment.postCommunity}</p>
             <p className="profile-comment-meta">
               {formatDate(comment.createdAt)}
             </p>
@@ -534,9 +532,7 @@ export default function Profile() {
       <article key={comment.id} className="profile-comment-card">
         <header>
           <div>
-            <p className="profile-comment-community">
-              {comment.postCommunity}
-            </p>
+            <p className="profile-comment-community">{comment.postCommunity}</p>
             <p className="profile-comment-meta">
               {formatDate(comment.createdAt)}
             </p>

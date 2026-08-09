@@ -56,7 +56,8 @@ function formatRelativeTime(isoDate: string): string {
   ];
 
   const absSeconds = Math.abs(diffInSeconds);
-  const unit = units.find((candidate) => absSeconds < candidate.max) || units[0];
+  const unit =
+    units.find((candidate) => absSeconds < candidate.max) || units[0];
   const amount = Math.floor(absSeconds / unit.value);
   const suffix = amount === 1 ? "" : "s";
 

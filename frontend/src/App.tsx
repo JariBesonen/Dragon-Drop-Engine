@@ -17,7 +17,7 @@ import Login from "./Pages/Login/Login";
 import Register from "./Pages/Register/Register";
 import { Messages } from "./Pages/Messages/Messages";
 //IMPORTED COMPONENTS
-import Footer from "./Components/Footer/Footer";
+
 import Navbar from "./Components/Navbar/Navbar";
 import SideNavbar from "./Components/SideNavbar/SideNavbar";
 import "../src/Global.css";
@@ -47,7 +47,7 @@ function AppLayout() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
         </Routes>
-        {!isAuthRoute ? <Footer /> : null}
+       
       </div>
     </div>
   );
