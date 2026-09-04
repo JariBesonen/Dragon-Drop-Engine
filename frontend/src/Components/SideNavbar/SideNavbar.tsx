@@ -2,6 +2,11 @@ import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { api, type ApiHive } from "../../lib/api";
+import {
+  getRecentlyViewedHives,
+  RECENTLY_VIEWED_HIVES_UPDATED_EVENT,
+  type RecentlyViewedHive,
+} from "../../lib/recentlyViewedHives";
 import "./SideNavbar.css";
 
 function SideNavbar() {
@@ -10,16 +15,24 @@ function SideNavbar() {
   const [hiveError, setHiveError] = useState<string>("");
   const [joinedHives, setJoinedHives] = useState<ApiHive[]>([]);
   const [joinedHiveError, setJoinedHiveError] = useState<string>("");
+  const [recentlyViewedHives, setRecentlyViewedHives] = useState<
+    RecentlyViewedHive[]
+  >([]);
 
   useEffect(() => {
     async function loadMyHives(): Promise<void> {
-      if (!currentUser) {
+      const activeUserId = currentUser?.id;
+
+      if (!activeUserId) {
         setMyHives([]);
         setHiveError("");
         setJoinedHives([]);
         setJoinedHiveError("");
+        setRecentlyViewedHives([]);
         return;
       }
+
+      setRecentlyViewedHives(getRecentlyViewedHives(activeUserId, 5));
 
       try {
         const response = await api.getMyHives();
@@ -49,6 +62,43 @@ function SideNavbar() {
     void loadMyHives();
   }, [currentUser, hiveRefreshKey]);
 
+  useEffect(() => {
+    const userId = currentUser?.id;
+
+    if (!userId) {
+      setRecentlyViewedHives([]);
+      return;
+    }
+
+    const activeUserId = userId;
+
+    function syncRecentHives(): void {
+      setRecentlyViewedHives(getRecentlyViewedHives(activeUserId, 5));
+    }
+
+    function handleRecentlyViewedUpdated(event: Event): void {
+      const customEvent = event as CustomEvent<{ userId?: number }>;
+      if (customEvent.detail?.userId !== activeUserId) {
+        return;
+      }
+
+      syncRecentHives();
+    }
+
+    syncRecentHives();
+    window.addEventListener(
+      RECENTLY_VIEWED_HIVES_UPDATED_EVENT,
+      handleRecentlyViewedUpdated,
+    );
+
+    return () => {
+      window.removeEventListener(
+        RECENTLY_VIEWED_HIVES_UPDATED_EVENT,
+        handleRecentlyViewedUpdated,
+      );
+    };
+  }, [currentUser]);
+
   return (
     <aside className="side-nav" aria-label="Sidebar navigation">
       <section className="side-nav-section">
@@ -56,6 +106,19 @@ function SideNavbar() {
         <NavLink to="/">Home</NavLink>
         <NavLink to="/explore">Explore</NavLink>
       </section>
+
+      {currentUser && recentlyViewedHives.length > 0 ? (
+        <section className="side-nav-section">
+          <h2>Recently Viewed</h2>
+          <div className="side-hives-list">
+            {recentlyViewedHives.map((hive: RecentlyViewedHive) => (
+              <NavLink key={hive.id} to={`/hive/${hive.id}`}>
+                {hive.name}
+              </NavLink>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {currentUser ? (
         <section className="side-nav-section">

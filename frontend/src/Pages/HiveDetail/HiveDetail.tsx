@@ -9,6 +9,7 @@ import {
   type ApiHiveFollowRequest,
   type ApiPost,
 } from "../../lib/api";
+import { addRecentlyViewedHive } from "../../lib/recentlyViewedHives";
 import "./HiveDetail.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -84,6 +85,17 @@ export default function HiveDetail() {
         setFollowRequestStatus(hiveResponse.requestStatus ?? "none");
         setPosts(postsResponse.posts);
         setError("");
+
+        if (currentUser) {
+          addRecentlyViewedHive(
+            currentUser.id,
+            {
+              id: hiveResponse.hive.id,
+              name: hiveResponse.hive.name,
+            },
+            5,
+          );
+        }
       } catch (caughtError) {
         if (caughtError instanceof ApiError && caughtError.status === 403) {
           try {
@@ -94,6 +106,17 @@ export default function HiveDetail() {
             setFollowRequestStatus(hiveResponse.requestStatus ?? "none");
             setPosts([]);
             setError("");
+
+            if (currentUser) {
+              addRecentlyViewedHive(
+                currentUser.id,
+                {
+                  id: hiveResponse.hive.id,
+                  name: hiveResponse.hive.name,
+                },
+                5,
+              );
+            }
           } catch (fallbackError) {
             setError(
               fallbackError instanceof Error
@@ -115,7 +138,7 @@ export default function HiveDetail() {
     }
 
     void loadHive();
-  }, [id]);
+  }, [id, currentUser]);
 
   useEffect(() => {
     if (!hive || !currentUser || currentUser.id !== hive.ownerUserId) {
