@@ -4,6 +4,7 @@ import type { ApiComment, ApiPost } from "../../lib/api";
 import { ApiError, api } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 import LoginPrompt from "../LoginPrompt/LoginPrompt";
+import ConfirmToast from "../ConfirmToast/ConfirmToast";
 import "./PostCard.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -115,6 +116,11 @@ export default function PostCard({
   const [isLoginPromptVisible, setIsLoginPromptVisible] =
     useState<boolean>(false);
   const [loginPromptMessage, setLoginPromptMessage] = useState<string>("");
+  const [commentPendingDeleteId, setCommentPendingDeleteId] = useState<
+    number | null
+  >(null);
+  const [isPostDeleteConfirmVisible, setIsPostDeleteConfirmVisible] =
+    useState<boolean>(false);
 
   function requireLogin(message: string): void {
     setLoginPromptMessage(message);
@@ -126,10 +132,11 @@ export default function PostCard({
     post.content.trim().length > 0 && post.content !== post.title;
 
   async function handleDelete(): Promise<void> {
-    const confirmed = window.confirm("Delete this post?");
-    if (!confirmed) {
-      return;
-    }
+    setIsPostDeleteConfirmVisible(true);
+  }
+
+  async function confirmDeletePost(): Promise<void> {
+    setIsPostDeleteConfirmVisible(false);
 
     try {
       setIsDeleting(true);
@@ -403,12 +410,17 @@ export default function PostCard({
 
   async function handleDeleteComment(commentId: number): Promise<void> {
     if (!currentUser) {
-      setCommentsMessage("Log in to delete comments.");
+      requireLogin("to delete comments");
       return;
     }
 
-    const confirmed = window.confirm("Delete this comment?");
-    if (!confirmed) {
+    setCommentPendingDeleteId(commentId);
+  }
+
+  async function confirmDeleteComment(): Promise<void> {
+    const commentId = commentPendingDeleteId;
+    setCommentPendingDeleteId(null);
+    if (commentId === null) {
       return;
     }
 
@@ -567,6 +579,22 @@ export default function PostCard({
         isVisible={isLoginPromptVisible}
         onClose={() => setIsLoginPromptVisible(false)}
         message={loginPromptMessage}
+      />
+      <ConfirmToast
+        isVisible={commentPendingDeleteId !== null}
+        message="Delete this comment?"
+        onConfirm={() => {
+          void confirmDeleteComment();
+        }}
+        onCancel={() => setCommentPendingDeleteId(null)}
+      />
+      <ConfirmToast
+        isVisible={isPostDeleteConfirmVisible}
+        message="Delete this post?"
+        onConfirm={() => {
+          void confirmDeletePost();
+        }}
+        onCancel={() => setIsPostDeleteConfirmVisible(false)}
       />
       <header className="post-card-header">
         {post.hiveId ? (

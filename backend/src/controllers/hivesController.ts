@@ -6,6 +6,7 @@ import {
   denyHiveFollowRequestById,
   createHive,
   deleteHiveByOwner,
+  getHiveFollowerCount,
   getHiveFollowRequest,
   getHiveById,
   getHivesByOwnerId,
@@ -146,12 +147,15 @@ export async function getById(req: Request, res: Response): Promise<Response> {
     return res.status(404).json({ message: "Hive not found." });
   }
 
+  const followerCount = await getHiveFollowerCount(hiveId);
+
   if (!req.session.userId) {
     return res.json({
       hive: mapHive(hive),
       joined: false,
       canViewPosts: hive.is_private ? false : true,
       requestStatus: "none",
+      followerCount,
     });
   }
 
@@ -176,6 +180,7 @@ export async function getById(req: Request, res: Response): Promise<Response> {
     joined,
     canViewPosts: !hive.is_private || joined,
     requestStatus,
+    followerCount,
   });
 }
 

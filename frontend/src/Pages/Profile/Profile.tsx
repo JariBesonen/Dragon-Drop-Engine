@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import ConfirmToast from "../../Components/ConfirmToast/ConfirmToast";
 import {
   ApiError,
   api,
@@ -92,6 +93,11 @@ export default function Profile() {
   const [isDeletingCommentId, setIsDeletingCommentId] = useState<number | null>(
     null,
   );
+  const [postPendingDeleteId, setPostPendingDeleteId] = useState<number | null>(
+    null,
+  );
+  const [commentPendingDelete, setCommentPendingDelete] =
+    useState<ApiProfileComment | null>(null);
   const [savedPosts, setSavedPosts] = useState<ApiPost[]>([]);
   const [savedPostsLoading, setSavedPostsLoading] = useState<boolean>(false);
   const [savedPostsError, setSavedPostsError] = useState<string>("");
@@ -439,8 +445,13 @@ export default function Profile() {
   }
 
   async function handleDeletePost(postId: number): Promise<void> {
-    const confirmed = window.confirm("Delete this post?");
-    if (!confirmed) {
+    setPostPendingDeleteId(postId);
+  }
+
+  async function confirmDeletePost(): Promise<void> {
+    const postId = postPendingDeleteId;
+    setPostPendingDeleteId(null);
+    if (postId === null) {
       return;
     }
 
@@ -472,8 +483,13 @@ export default function Profile() {
   async function handleDeleteComment(
     comment: ApiProfileComment,
   ): Promise<void> {
-    const confirmed = window.confirm("Delete this comment?");
-    if (!confirmed) {
+    setCommentPendingDelete(comment);
+  }
+
+  async function confirmDeleteComment(): Promise<void> {
+    const comment = commentPendingDelete;
+    setCommentPendingDelete(null);
+    if (!comment) {
       return;
     }
 
@@ -601,6 +617,22 @@ export default function Profile() {
 
   return (
     <main className="profile-page">
+      <ConfirmToast
+        isVisible={postPendingDeleteId !== null}
+        message="Delete this post?"
+        onConfirm={() => {
+          void confirmDeletePost();
+        }}
+        onCancel={() => setPostPendingDeleteId(null)}
+      />
+      <ConfirmToast
+        isVisible={commentPendingDelete !== null}
+        message="Delete this comment?"
+        onConfirm={() => {
+          void confirmDeleteComment();
+        }}
+        onCancel={() => setCommentPendingDelete(null)}
+      />
       <section className="profile-shell">
         <header className="profile-header">
           <div

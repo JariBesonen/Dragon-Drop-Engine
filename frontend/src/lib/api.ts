@@ -163,6 +163,7 @@ export interface ApiHiveDetailResult {
   joined: boolean;
   canViewPosts?: boolean;
   requestStatus?: "none" | "pending" | "accepted";
+  followerCount?: number;
 }
 
 export interface ApiHiveFollowRequest {

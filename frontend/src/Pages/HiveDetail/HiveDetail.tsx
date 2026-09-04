@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import PostCard from "../../Components/PostCard/PostCard";
 import LoginPrompt from "../../Components/LoginPrompt/LoginPrompt";
+import ConfirmToast from "../../Components/ConfirmToast/ConfirmToast";
 import { useAuth } from "../../context/AuthContext";
 import {
   ApiError,
@@ -45,6 +46,7 @@ export default function HiveDetail() {
   const [error, setError] = useState<string>("");
   const [isJoined, setIsJoined] = useState<boolean>(false);
   const [canViewPosts, setCanViewPosts] = useState<boolean>(true);
+  const [followerCount, setFollowerCount] = useState<number>(0);
   const [followRequestStatus, setFollowRequestStatus] = useState<
     "none" | "pending" | "accepted"
   >("none");
@@ -56,6 +58,8 @@ export default function HiveDetail() {
     useState<string>("to join this hive");
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState<boolean>(false);
   const [isDeletingHive, setIsDeletingHive] = useState<boolean>(false);
+  const [isDeleteHiveConfirmVisible, setIsDeleteHiveConfirmVisible] =
+    useState<boolean>(false);
   const [followRequests, setFollowRequests] = useState<ApiHiveFollowRequest[]>(
     [],
   );
@@ -87,6 +91,7 @@ export default function HiveDetail() {
         setIsJoined(hiveResponse.joined);
         setCanViewPosts(hiveResponse.canViewPosts ?? true);
         setFollowRequestStatus(hiveResponse.requestStatus ?? "none");
+        setFollowerCount(hiveResponse.followerCount ?? 0);
         setPosts(postsResponse.posts);
         setError("");
       } catch (caughtError) {
@@ -97,6 +102,7 @@ export default function HiveDetail() {
             setIsJoined(hiveResponse.joined);
             setCanViewPosts(false);
             setFollowRequestStatus(hiveResponse.requestStatus ?? "none");
+            setFollowerCount(hiveResponse.followerCount ?? 0);
             setPosts([]);
             setError("");
           } catch (fallbackError) {
@@ -180,6 +186,7 @@ export default function HiveDetail() {
 
       if (response.joined) {
         setCanViewPosts(true);
+        setFollowerCount((current) => current + 1);
         setJoinMessage(
           "You joined this hive. Posts from this hive now appear in Home feed.",
         );
@@ -215,6 +222,7 @@ export default function HiveDetail() {
       setJoinMessage("");
       await api.unjoinHive(hiveId);
       setIsJoined(false);
+      setFollowerCount((current) => Math.max(0, current - 1));
       setJoinMessage("You left this hive.");
     } catch (caughtError) {
       setJoinMessage(
@@ -258,10 +266,12 @@ export default function HiveDetail() {
       return;
     }
 
-    const confirmed = window.confirm(
-      `Delete "${hive.name}" and all of its posts? This cannot be undone.`,
-    );
-    if (!confirmed) {
+    setIsDeleteHiveConfirmVisible(true);
+  }
+
+  async function confirmDeleteHive(): Promise<void> {
+    setIsDeleteHiveConfirmVisible(false);
+    if (!hive) {
       return;
     }
 
@@ -432,6 +442,14 @@ export default function HiveDetail() {
         onClose={() => setIsLoginPromptVisible(false)}
         message={loginPromptMessage}
       />
+      <ConfirmToast
+        isVisible={isDeleteHiveConfirmVisible}
+        message={`Delete "${hive.name}" and all of its posts? This cannot be undone.`}
+        onConfirm={() => {
+          void confirmDeleteHive();
+        }}
+        onCancel={() => setIsDeleteHiveConfirmVisible(false)}
+      />
       <section className="hive-shell">
         {bannerSrc ? (
           <img
@@ -571,6 +589,9 @@ export default function HiveDetail() {
             <article className="hive-description-card hive-description-card--sidebar">
               <h3>About</h3>
               <p>{hive.description}</p>
+              <p className="hive-follower-count">
+                {followerCount} {followerCount === 1 ? "follower" : "followers"}
+              </p>
 
               {isOwner && hive.isPrivate ? (
                 <div className="hive-follow-requests">

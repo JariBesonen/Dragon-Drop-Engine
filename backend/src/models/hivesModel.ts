@@ -120,6 +120,17 @@ export async function isUserJoinedHive(
   return rows[0]?.exists ?? false;
 }
 
+export async function getHiveFollowerCount(hiveId: number): Promise<number> {
+  const rows = await query<{ count: string }>(
+    `SELECT COUNT(*) AS count
+     FROM hive_memberships
+     WHERE hive_id = $1`,
+    [hiveId],
+  );
+
+  return Number(rows[0]?.count) || 0;
+}
+
 export async function joinHive(userId: number, hiveId: number): Promise<void> {
   await query(
     `INSERT INTO hive_memberships (user_id, hive_id)
