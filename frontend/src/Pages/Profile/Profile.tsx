@@ -101,6 +101,9 @@ export default function Profile() {
   const [savedPosts, setSavedPosts] = useState<ApiPost[]>([]);
   const [savedPostsLoading, setSavedPostsLoading] = useState<boolean>(false);
   const [savedPostsError, setSavedPostsError] = useState<string>("");
+  const [isRemovingSavedPostId, setIsRemovingSavedPostId] = useState<
+    number | null
+  >(null);
 
   const resolvedUsername = username ?? currentUser?.username ?? "";
 
@@ -446,6 +449,23 @@ export default function Profile() {
 
   async function handleDeletePost(postId: number): Promise<void> {
     setPostPendingDeleteId(postId);
+  }
+
+  async function handleRemoveSavedPost(postId: number): Promise<void> {
+    try {
+      setIsRemovingSavedPostId(postId);
+      setSavedPostsError("");
+      await api.unsavePost(postId);
+      setSavedPosts((current) => current.filter((post) => post.id !== postId));
+    } catch (caughtError) {
+      setSavedPostsError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Unable to remove saved post.",
+      );
+    } finally {
+      setIsRemovingSavedPostId(null);
+    }
   }
 
   async function confirmDeletePost(): Promise<void> {
@@ -933,12 +953,14 @@ export default function Profile() {
                     const imageSrc = resolveMediaSrc(post.imageUrl);
 
                     return (
-                      <Link
+                      <article
                         key={post.id}
-                        to={`/posts/${post.id}`}
-                        className="profile-post-link"
+                        className="profile-post-card profile-saved-post-card"
                       >
-                        <article className="profile-post-card profile-link-card">
+                        <Link
+                          to={`/posts/${post.id}`}
+                          className="profile-post-link"
+                        >
                           <header>
                             <p className="profile-post-community">
                               {post.community}
@@ -956,8 +978,22 @@ export default function Profile() {
                           ) : null}
                           <h4>{post.title}</h4>
                           {post.content ? <p>{post.content}</p> : null}
-                        </article>
-                      </Link>
+                        </Link>
+                        <div className="profile-saved-post-actions">
+                          <button
+                            type="button"
+                            className="profile-saved-post-remove-button"
+                            onClick={() => {
+                              void handleRemoveSavedPost(post.id);
+                            }}
+                            disabled={isRemovingSavedPostId === post.id}
+                          >
+                            {isRemovingSavedPostId === post.id
+                              ? "Removing..."
+                              : "Remove from Saved"}
+                          </button>
+                        </div>
+                      </article>
                     );
                   })(),
                 )}
