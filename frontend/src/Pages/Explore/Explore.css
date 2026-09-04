@@ -39,6 +39,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 0.8rem;
+  align-items: start;
 }
 
 /* Responsive layout */

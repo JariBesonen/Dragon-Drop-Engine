@@ -8,6 +8,10 @@
   gap: 0.6rem;
 }
 
+.post-card.post-card-no-image {
+  gap: 1.6rem;
+}
+
 .post-card-header {
   display: flex;
   justify-content: space-between;
@@ -133,6 +137,10 @@
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
+}
+
+.post-card.post-card-no-image .post-card-comment-form {
+  gap: 1.45rem;
 }
 
 .post-card-comment-form textarea,

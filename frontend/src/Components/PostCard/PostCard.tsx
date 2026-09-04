@@ -588,7 +588,7 @@ export default function PostCard({
   }
 
   return (
-    <article className="post-card">
+    <article className={`post-card ${!imageSrc ? "post-card-no-image" : ""}`}>
       <header className="post-card-header">
         {post.hiveId ? (
           <Link
