@@ -280,7 +280,7 @@ function Navbar() {
           ) : null}
         </div>
         <button type="submit" className="nav-search-submit">
-          search
+          Search
         </button>
         {showSearchDropdown ? (
           <div className="nav-search-dropdown">
@@ -342,11 +342,13 @@ function Navbar() {
       <div className="nav-right">
         <ul>
           <li>
-            <Link to="/">home</Link>
+            <Link to="/">Home</Link>
           </li>
-          <li>
-            <Link to="/create">create hive</Link>
-          </li>
+          {currentUser ? (
+            <li>
+              <Link to="/create">Create Hive</Link>
+            </li>
+          ) : null}
           {currentUser ? (
             <li
               className="nav-notifications-item"
@@ -403,7 +405,7 @@ function Navbar() {
           {currentUser ? (
             <li className="nav-messages-item">
               <Link to="/messages" className="nav-messages-link">
-                messages
+                Messages
                 {unreadMessageCount > 0 ? (
                   <span
                     className="nav-messages-dot"
@@ -414,7 +416,7 @@ function Navbar() {
             </li>
           ) : null}
           <li>
-            <Link to="/profile">profile</Link>
+            <Link to="/profile">Profile</Link>
           </li>
         </ul>
         <div className="auth-controls">
@@ -422,13 +424,13 @@ function Navbar() {
             <>
               <span>@{currentUser.username}</span>
               <button type="button" onClick={handleLogout}>
-                logout
+                Logout
               </button>
             </>
           ) : (
             <div className="auth-links">
               <Link className="login-link" to="/login">
-                login
+                Login
               </Link>
             </div>
           )}

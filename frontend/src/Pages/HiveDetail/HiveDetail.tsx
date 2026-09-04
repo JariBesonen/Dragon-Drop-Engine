@@ -52,9 +52,8 @@ export default function HiveDetail() {
   const [isJoining, setIsJoining] = useState<boolean>(false);
   const [isLoginPromptVisible, setIsLoginPromptVisible] =
     useState<boolean>(false);
-  const [loginPromptMessage, setLoginPromptMessage] = useState<string>(
-    "to join this hive",
-  );
+  const [loginPromptMessage, setLoginPromptMessage] =
+    useState<string>("to join this hive");
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState<boolean>(false);
   const [isDeletingHive, setIsDeletingHive] = useState<boolean>(false);
   const [followRequests, setFollowRequests] = useState<ApiHiveFollowRequest[]>(
