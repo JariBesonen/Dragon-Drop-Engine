@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import PostCard from "../../Components/PostCard/PostCard";
-import LoginPrompt from "../../Components/LoginPrompt/LoginPrompt";
 import { api, type ApiPost } from "../../lib/api";
 import "./Explore.css";
 
@@ -9,7 +8,6 @@ export default function Explore() {
   const [searchParams] = useSearchParams();
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [error, setError] = useState<string>("");
-  const [showLoginPrompt, setShowLoginPrompt] = useState<boolean>(false);
 
   const query = searchParams.get("q")?.trim().toLowerCase() || "";
 
@@ -44,10 +42,6 @@ export default function Explore() {
 
   return (
     <main className="feed-page">
-      <LoginPrompt
-        isVisible={showLoginPrompt}
-        onClose={() => setShowLoginPrompt(false)}
-      />
       <section className="feed-shell">
         <h2>Explore</h2>
         <p className="feed-description">
@@ -64,11 +58,7 @@ export default function Explore() {
         ) : null}
         <div className="feed-list">
           {filteredPosts.map((post: ApiPost) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              onRequireLogin={() => setShowLoginPrompt(true)}
-            />
+            <PostCard key={post.id} post={post} />
           ))}
         </div>
       </section>

@@ -1,3 +1,22 @@
+.login-prompt-backdrop {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .login-prompt-toast {
   position: fixed;
   top: 20px;

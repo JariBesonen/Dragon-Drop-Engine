@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import PostCard from "../../Components/PostCard/PostCard";
+import LoginPrompt from "../../Components/LoginPrompt/LoginPrompt";
 import { useAuth } from "../../context/AuthContext";
 import {
   ApiError,
@@ -49,6 +50,11 @@ export default function HiveDetail() {
   >("none");
   const [joinMessage, setJoinMessage] = useState<string>("");
   const [isJoining, setIsJoining] = useState<boolean>(false);
+  const [isLoginPromptVisible, setIsLoginPromptVisible] =
+    useState<boolean>(false);
+  const [loginPromptMessage, setLoginPromptMessage] = useState<string>(
+    "to join this hive",
+  );
   const [isUpdatingPrivacy, setIsUpdatingPrivacy] = useState<boolean>(false);
   const [isDeletingHive, setIsDeletingHive] = useState<boolean>(false);
   const [followRequests, setFollowRequests] = useState<ApiHiveFollowRequest[]>(
@@ -155,7 +161,8 @@ export default function HiveDetail() {
   async function handleJoinHive(): Promise<void> {
     const hiveId = Number(id);
     if (!currentUser) {
-      setJoinMessage("Log in to join this hive.");
+      setLoginPromptMessage("to join this hive");
+      setIsLoginPromptVisible(true);
       return;
     }
 
@@ -421,6 +428,11 @@ export default function HiveDetail() {
 
   return (
     <main className="hive-page">
+      <LoginPrompt
+        isVisible={isLoginPromptVisible}
+        onClose={() => setIsLoginPromptVisible(false)}
+        message={loginPromptMessage}
+      />
       <section className="hive-shell">
         {bannerSrc ? (
           <img
@@ -456,9 +468,7 @@ export default function HiveDetail() {
               <button
                 type="button"
                 className="hive-follow-button"
-                disabled={
-                  !currentUser || isJoining || followRequestStatus === "pending"
-                }
+                disabled={isJoining || followRequestStatus === "pending"}
                 onClick={() => {
                   if (isJoined) {
                     void handleUnjoinHive();
@@ -483,8 +493,14 @@ export default function HiveDetail() {
             <button
               type="button"
               className="hive-create-post-button"
-              disabled={!currentUser || !canViewPosts}
+              disabled={!!currentUser && !canViewPosts}
               onClick={() => {
+                if (!currentUser) {
+                  setLoginPromptMessage("to create a post");
+                  setIsLoginPromptVisible(true);
+                  return;
+                }
+
                 setIsPostModalOpen(true);
               }}
             >

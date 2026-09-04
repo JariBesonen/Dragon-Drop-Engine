@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import type { ApiComment, ApiPost } from "../../lib/api";
 import { ApiError, api } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
+import LoginPrompt from "../LoginPrompt/LoginPrompt";
 import "./PostCard.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -71,11 +72,9 @@ function formatRelativeTime(isoDate: string): string {
 export default function PostCard({
   post,
   hideComments = false,
-  onRequireLogin,
 }: {
   post: ApiPost;
   hideComments?: boolean;
-  onRequireLogin?: () => void;
 }) {
   const { currentUser } = useAuth();
   const [isDeleted, setIsDeleted] = useState<boolean>(false);
@@ -113,6 +112,14 @@ export default function PostCard({
   const [isCommentDeletingForId, setIsCommentDeletingForId] = useState<
     number | null
   >(null);
+  const [isLoginPromptVisible, setIsLoginPromptVisible] =
+    useState<boolean>(false);
+  const [loginPromptMessage, setLoginPromptMessage] = useState<string>("");
+
+  function requireLogin(message: string): void {
+    setLoginPromptMessage(message);
+    setIsLoginPromptVisible(true);
+  }
 
   const imageSrc = resolveMediaSrc(post.imageUrl);
   const shouldRenderBody =
@@ -147,7 +154,7 @@ export default function PostCard({
 
   async function handleVote(nextVote: 1 | -1): Promise<void> {
     if (!currentUser) {
-      onRequireLogin?.();
+      requireLogin("to like or dislike posts");
       return;
     }
 
@@ -176,7 +183,7 @@ export default function PostCard({
 
   async function handleSaveToggle(): Promise<void> {
     if (!currentUser) {
-      onRequireLogin?.();
+      requireLogin("to save posts");
       return;
     }
 
@@ -278,7 +285,7 @@ export default function PostCard({
 
   async function handleCreateComment(): Promise<void> {
     if (!currentUser) {
-      onRequireLogin?.();
+      requireLogin("to comment");
       return;
     }
 
@@ -314,7 +321,7 @@ export default function PostCard({
 
   async function handleCreateReply(parentCommentId: number): Promise<void> {
     if (!currentUser) {
-      setCommentsMessage("Log in to reply.");
+      requireLogin("to reply");
       return;
     }
 
@@ -362,7 +369,7 @@ export default function PostCard({
     nextVote: 1 | -1,
   ): Promise<void> {
     if (!currentUser) {
-      setCommentsMessage("Log in to like or dislike comments.");
+      requireLogin("to like or dislike comments");
       return;
     }
 
@@ -448,106 +455,106 @@ export default function PostCard({
     return commentList
       .filter((comment) => !comment.isDeleted)
       .map((comment) => {
-      const replyDraft = replyDraftByCommentId[comment.id] || "";
+        const replyDraft = replyDraftByCommentId[comment.id] || "";
 
-      return (
-        <div
-          key={comment.id}
-          className="post-card-comment"
-          style={{ marginLeft: `${Math.min(depth, 3) * 1.05}rem` }}
-        >
-          <div className="post-card-comment-meta">
-            <span>{`@${comment.authorUsername}`}</span>
-            <div className="post-card-comment-meta-actions">
-              <small>{formatRelativeTime(comment.createdAt)}</small>
-              {currentUser?.id === comment.userId ? (
-                <button
-                  type="button"
-                  className="post-card-comment-delete-button"
-                  onClick={() => {
-                    void handleDeleteComment(comment.id);
-                  }}
-                  disabled={isCommentDeletingForId === comment.id}
-                >
-                  {isCommentDeletingForId === comment.id
-                    ? "Deleting..."
-                    : "Delete"}
-                </button>
-              ) : null}
+        return (
+          <div
+            key={comment.id}
+            className="post-card-comment"
+            style={{ marginLeft: `${Math.min(depth, 3) * 1.05}rem` }}
+          >
+            <div className="post-card-comment-meta">
+              <span>{`@${comment.authorUsername}`}</span>
+              <div className="post-card-comment-meta-actions">
+                <small>{formatRelativeTime(comment.createdAt)}</small>
+                {currentUser?.id === comment.userId ? (
+                  <button
+                    type="button"
+                    className="post-card-comment-delete-button"
+                    onClick={() => {
+                      void handleDeleteComment(comment.id);
+                    }}
+                    disabled={isCommentDeletingForId === comment.id}
+                  >
+                    {isCommentDeletingForId === comment.id
+                      ? "Deleting..."
+                      : "Delete"}
+                  </button>
+                ) : null}
+              </div>
             </div>
-          </div>
-          <p>{comment.content}</p>
+            <p>{comment.content}</p>
 
-          <div className="post-card-comment-vote-row">
-            <button
-              type="button"
-              className={`post-card-comment-vote-button ${comment.userVote === 1 ? "active" : ""}`}
-              onClick={() => {
-                void handleCommentVote(comment.id, 1);
-              }}
-              disabled={!currentUser || isCommentVotingForId === comment.id}
-              aria-pressed={comment.userVote === 1}
-            >
-              Like <span>{comment.likeCount}</span>
-            </button>
-            <button
-              type="button"
-              className={`post-card-comment-vote-button ${comment.userVote === -1 ? "active" : ""}`}
-              onClick={() => {
-                void handleCommentVote(comment.id, -1);
-              }}
-              disabled={!currentUser || isCommentVotingForId === comment.id}
-              aria-pressed={comment.userVote === -1}
-            >
-              Dislike <span>{comment.dislikeCount}</span>
-            </button>
-            <button
-              type="button"
-              className="post-card-comment-reply-button"
-              onClick={() => {
-                setOpenReplyForId((current) =>
-                  current === comment.id ? null : comment.id,
-                );
-              }}
-              disabled={!currentUser}
-            >
-              Reply
-            </button>
-          </div>
-
-          {openReplyForId === comment.id ? (
-            <div className="post-card-reply-form">
-              <textarea
-                rows={2}
-                value={replyDraft}
-                placeholder="Write a reply"
-                onChange={(event) => {
-                  setReplyDraftByCommentId((current) => ({
-                    ...current,
-                    [comment.id]: event.target.value,
-                  }));
-                }}
-              />
+            <div className="post-card-comment-vote-row">
               <button
                 type="button"
+                className={`post-card-comment-vote-button ${comment.userVote === 1 ? "active" : ""}`}
                 onClick={() => {
-                  void handleCreateReply(comment.id);
+                  void handleCommentVote(comment.id, 1);
                 }}
-                disabled={isReplySubmittingForId === comment.id}
+                disabled={!currentUser || isCommentVotingForId === comment.id}
+                aria-pressed={comment.userVote === 1}
               >
-                {isReplySubmittingForId === comment.id
-                  ? "Replying..."
-                  : "Reply"}
+                Like <span>{comment.likeCount}</span>
+              </button>
+              <button
+                type="button"
+                className={`post-card-comment-vote-button ${comment.userVote === -1 ? "active" : ""}`}
+                onClick={() => {
+                  void handleCommentVote(comment.id, -1);
+                }}
+                disabled={!currentUser || isCommentVotingForId === comment.id}
+                aria-pressed={comment.userVote === -1}
+              >
+                Dislike <span>{comment.dislikeCount}</span>
+              </button>
+              <button
+                type="button"
+                className="post-card-comment-reply-button"
+                onClick={() => {
+                  setOpenReplyForId((current) =>
+                    current === comment.id ? null : comment.id,
+                  );
+                }}
+                disabled={!currentUser}
+              >
+                Reply
               </button>
             </div>
-          ) : null}
 
-          {comment.replies.length > 0
-            ? renderComments(comment.replies, depth + 1)
-            : null}
-        </div>
-      );
-    });
+            {openReplyForId === comment.id ? (
+              <div className="post-card-reply-form">
+                <textarea
+                  rows={2}
+                  value={replyDraft}
+                  placeholder="Write a reply"
+                  onChange={(event) => {
+                    setReplyDraftByCommentId((current) => ({
+                      ...current,
+                      [comment.id]: event.target.value,
+                    }));
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleCreateReply(comment.id);
+                  }}
+                  disabled={isReplySubmittingForId === comment.id}
+                >
+                  {isReplySubmittingForId === comment.id
+                    ? "Replying..."
+                    : "Reply"}
+                </button>
+              </div>
+            ) : null}
+
+            {comment.replies.length > 0
+              ? renderComments(comment.replies, depth + 1)
+              : null}
+          </div>
+        );
+      });
   }
 
   if (isDeleted) {
@@ -556,6 +563,11 @@ export default function PostCard({
 
   return (
     <article className={`post-card ${!imageSrc ? "post-card-no-image" : ""}`}>
+      <LoginPrompt
+        isVisible={isLoginPromptVisible}
+        onClose={() => setIsLoginPromptVisible(false)}
+        message={loginPromptMessage}
+      />
       <header className="post-card-header">
         {post.hiveId ? (
           <Link
@@ -642,6 +654,12 @@ export default function PostCard({
               rows={2}
               value={commentDraft}
               placeholder="Write a comment"
+              onFocus={(event) => {
+                if (!currentUser) {
+                  event.target.blur();
+                  requireLogin("to comment");
+                }
+              }}
               onChange={(event) => {
                 setCommentDraft(event.target.value);
               }}
