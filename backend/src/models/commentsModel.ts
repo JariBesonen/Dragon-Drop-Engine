@@ -177,15 +177,22 @@ export async function deleteCommentByOwner(
   ownerUserId: number,
 ): Promise<CommentRow | null> {
   const rows = await query<CommentReferenceRow>(
-    `UPDATE comments
+    `WITH RECURSIVE descendants AS (
+       SELECT id FROM comments WHERE id = $1 AND user_id = $2
+       UNION ALL
+       SELECT c.id
+       FROM comments c
+       JOIN descendants d ON c.parent_comment_id = d.id
+     )
+     UPDATE comments
      SET deleted_at = COALESCE(deleted_at, NOW()),
          content = '[deleted]'
-     WHERE id = $1 AND user_id = $2
+     WHERE id IN (SELECT id FROM descendants)
      RETURNING id, post_id, user_id, deleted_at`,
     [commentId, ownerUserId],
   );
 
-  const updated = rows[0];
+  const updated = rows.find((row) => row.id === commentId);
   if (!updated) {
     return null;
   }

@@ -113,10 +113,6 @@ export default function PostCard({
   const [isCommentDeletingForId, setIsCommentDeletingForId] = useState<
     number | null
   >(null);
-  const [
-    collapsedDeletedThreadByCommentId,
-    setCollapsedDeletedThreadByCommentId,
-  ] = useState<Record<number, boolean>>({});
 
   const imageSrc = resolveMediaSrc(post.imageUrl);
   const shouldRenderBody =
@@ -241,6 +237,15 @@ export default function PostCard({
     });
   }
 
+  function markSubtreeDeleted(node: ApiComment): ApiComment {
+    return {
+      ...node,
+      content: "[deleted]",
+      isDeleted: true,
+      replies: node.replies.map(markSubtreeDeleted),
+    };
+  }
+
   function updateCommentInTree(
     nodes: ApiComment[],
     targetCommentId: number,
@@ -260,13 +265,6 @@ export default function PostCard({
         replies: updateCommentInTree(node.replies, targetCommentId, updater),
       };
     });
-  }
-
-  function countNestedReplies(comment: ApiComment): number {
-    return comment.replies.reduce(
-      (total, reply) => total + 1 + countNestedReplies(reply),
-      0,
-    );
   }
 
   async function handleToggleComments(): Promise<void> {
@@ -413,9 +411,8 @@ export default function PostCard({
       const response = await api.deleteComment(post.id, commentId);
       setComments((current) =>
         updateCommentInTree(current, commentId, (node) => ({
-          ...node,
+          ...markSubtreeDeleted(node),
           content: response.comment.content,
-          isDeleted: response.comment.isDeleted,
           userVote: response.comment.userVote,
           likeCount: response.comment.likeCount,
           dislikeCount: response.comment.dislikeCount,
@@ -448,17 +445,10 @@ export default function PostCard({
   }
 
   function renderComments(commentList: ApiComment[], depth = 0) {
-    return commentList.map((comment) => {
+    return commentList
+      .filter((comment) => !comment.isDeleted)
+      .map((comment) => {
       const replyDraft = replyDraftByCommentId[comment.id] || "";
-      const isDeletedComment = comment.isDeleted;
-      const nestedReplyCount = countNestedReplies(comment);
-      const hasReplies = comment.replies.length > 0;
-      const shouldDefaultCollapse = isDeletedComment && nestedReplyCount >= 3;
-      const hasCollapsePreference =
-        collapsedDeletedThreadByCommentId[comment.id] !== undefined;
-      const isThreadCollapsed = hasCollapsePreference
-        ? collapsedDeletedThreadByCommentId[comment.id]
-        : shouldDefaultCollapse;
 
       return (
         <div
@@ -467,12 +457,10 @@ export default function PostCard({
           style={{ marginLeft: `${Math.min(depth, 3) * 1.05}rem` }}
         >
           <div className="post-card-comment-meta">
-            <span>
-              {isDeletedComment ? "[deleted]" : `@${comment.authorUsername}`}
-            </span>
+            <span>{`@${comment.authorUsername}`}</span>
             <div className="post-card-comment-meta-actions">
               <small>{formatRelativeTime(comment.createdAt)}</small>
-              {currentUser?.id === comment.userId && !isDeletedComment ? (
+              {currentUser?.id === comment.userId ? (
                 <button
                   type="button"
                   className="post-card-comment-delete-button"
@@ -488,65 +476,44 @@ export default function PostCard({
               ) : null}
             </div>
           </div>
-          <p className={isDeletedComment ? "post-card-comment-deleted" : ""}>
-            {isDeletedComment ? "Comment deleted" : comment.content}
-          </p>
+          <p>{comment.content}</p>
 
-          {isDeletedComment && hasReplies ? (
+          <div className="post-card-comment-vote-row">
             <button
               type="button"
-              className="post-card-deleted-thread-toggle"
+              className={`post-card-comment-vote-button ${comment.userVote === 1 ? "active" : ""}`}
               onClick={() => {
-                setCollapsedDeletedThreadByCommentId((current) => ({
-                  ...current,
-                  [comment.id]: !isThreadCollapsed,
-                }));
+                void handleCommentVote(comment.id, 1);
               }}
+              disabled={!currentUser || isCommentVotingForId === comment.id}
+              aria-pressed={comment.userVote === 1}
             >
-              {isThreadCollapsed
-                ? `Show thread (${nestedReplyCount} replies)`
-                : "Hide thread"}
+              Like <span>{comment.likeCount}</span>
             </button>
-          ) : null}
-
-          {!isDeletedComment ? (
-            <div className="post-card-comment-vote-row">
-              <button
-                type="button"
-                className={`post-card-comment-vote-button ${comment.userVote === 1 ? "active" : ""}`}
-                onClick={() => {
-                  void handleCommentVote(comment.id, 1);
-                }}
-                disabled={!currentUser || isCommentVotingForId === comment.id}
-                aria-pressed={comment.userVote === 1}
-              >
-                Like <span>{comment.likeCount}</span>
-              </button>
-              <button
-                type="button"
-                className={`post-card-comment-vote-button ${comment.userVote === -1 ? "active" : ""}`}
-                onClick={() => {
-                  void handleCommentVote(comment.id, -1);
-                }}
-                disabled={!currentUser || isCommentVotingForId === comment.id}
-                aria-pressed={comment.userVote === -1}
-              >
-                Dislike <span>{comment.dislikeCount}</span>
-              </button>
-              <button
-                type="button"
-                className="post-card-comment-reply-button"
-                onClick={() => {
-                  setOpenReplyForId((current) =>
-                    current === comment.id ? null : comment.id,
-                  );
-                }}
-                disabled={!currentUser}
-              >
-                Reply
-              </button>
-            </div>
-          ) : null}
+            <button
+              type="button"
+              className={`post-card-comment-vote-button ${comment.userVote === -1 ? "active" : ""}`}
+              onClick={() => {
+                void handleCommentVote(comment.id, -1);
+              }}
+              disabled={!currentUser || isCommentVotingForId === comment.id}
+              aria-pressed={comment.userVote === -1}
+            >
+              Dislike <span>{comment.dislikeCount}</span>
+            </button>
+            <button
+              type="button"
+              className="post-card-comment-reply-button"
+              onClick={() => {
+                setOpenReplyForId((current) =>
+                  current === comment.id ? null : comment.id,
+                );
+              }}
+              disabled={!currentUser}
+            >
+              Reply
+            </button>
+          </div>
 
           {openReplyForId === comment.id ? (
             <div className="post-card-reply-form">
@@ -575,7 +542,7 @@ export default function PostCard({
             </div>
           ) : null}
 
-          {hasReplies && !isThreadCollapsed
+          {comment.replies.length > 0
             ? renderComments(comment.replies, depth + 1)
             : null}
         </div>
