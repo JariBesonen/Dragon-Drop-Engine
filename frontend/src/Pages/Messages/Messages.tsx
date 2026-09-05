@@ -180,6 +180,7 @@ export function Messages() {
                 value={messageContent}
                 onChange={(e) => setMessageContent(e.target.value)}
                 placeholder="Type a message..."
+                aria-label="Type a message"
                 className="message-input-field"
               />
               <button

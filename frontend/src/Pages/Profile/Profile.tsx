@@ -5,6 +5,7 @@ import ConfirmToast from "../../Components/ConfirmToast/ConfirmToast";
 import {
   ApiError,
   api,
+  resolveMediaUrl as resolveMediaSrc,
   type ApiFollowRequest,
   type ApiPost,
   type ApiProfileComment,
@@ -13,25 +14,6 @@ import {
 import "./Profile.css";
 
 type ProfileTab = "overview" | "posts" | "comments" | "saved";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
-function resolveMediaSrc(mediaUrl: string | null): string | null {
-  if (!mediaUrl) {
-    return null;
-  }
-
-  if (
-    mediaUrl.startsWith("http://") ||
-    mediaUrl.startsWith("https://") ||
-    mediaUrl.startsWith("data:") ||
-    mediaUrl.startsWith("blob:")
-  ) {
-    return mediaUrl;
-  }
-
-  return `${API_BASE_URL}${mediaUrl.startsWith("/") ? mediaUrl : `/${mediaUrl}`}`;
-}
 
 function formatAccountAge(createdAt: string): string {
   const createdTime = new Date(createdAt).getTime();

@@ -388,7 +388,9 @@ function Navbar() {
                       <Link
                         key={notification.id}
                         className={`nav-search-result nav-notification-link${
-                          notification.read ? "" : " nav-notification-link--unread"
+                          notification.read
+                            ? ""
+                            : " nav-notification-link--unread"
                         }`}
                         to={resolveNotificationTarget(notification)}
                         onClick={() => {

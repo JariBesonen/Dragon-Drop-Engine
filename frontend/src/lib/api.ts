@@ -188,6 +188,24 @@ export class ApiError extends Error {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
+// resolves a relative /uploads path (or passes through absolute/data/blob URLs) against the API origin
+export function resolveMediaUrl(mediaUrl: string | null): string | null {
+  if (!mediaUrl) {
+    return null;
+  }
+
+  if (
+    mediaUrl.startsWith("http://") ||
+    mediaUrl.startsWith("https://") ||
+    mediaUrl.startsWith("data:") ||
+    mediaUrl.startsWith("blob:")
+  ) {
+    return mediaUrl;
+  }
+
+  return `${API_BASE_URL}${mediaUrl.startsWith("/") ? mediaUrl : `/${mediaUrl}`}`;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   const isFormDataBody = init?.body instanceof FormData;

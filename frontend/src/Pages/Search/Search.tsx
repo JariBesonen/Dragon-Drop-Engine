@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import PostCard from "../../Components/PostCard/PostCard";
-import { api, type ApiHive, type ApiPost } from "../../lib/api";
+import {
+  api,
+  resolveMediaUrl as resolveAvatarSrc,
+  type ApiHive,
+  type ApiPost,
+} from "../../lib/api";
 import "./Search.css";
 
 interface SearchUser {
@@ -13,25 +18,6 @@ interface SearchUser {
 }
 
 type SearchFilter = "all" | "hives" | "users" | "posts";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
-function resolveAvatarSrc(mediaUrl: string | null): string | null {
-  if (!mediaUrl) {
-    return null;
-  }
-
-  if (
-    mediaUrl.startsWith("http://") ||
-    mediaUrl.startsWith("https://") ||
-    mediaUrl.startsWith("data:") ||
-    mediaUrl.startsWith("blob:")
-  ) {
-    return mediaUrl;
-  }
-
-  return `${API_BASE_URL}${mediaUrl.startsWith("/") ? mediaUrl : `/${mediaUrl}`}`;
-}
 
 function getAvatarInitials(displayName: string, username: string): string {
   const source = displayName.trim() || username.trim() || "?";
@@ -59,9 +45,7 @@ export default function Search() {
   const [activeFilter, setActiveFilter] = useState<SearchFilter>("all");
 
   function toggleFilter(nextFilter: Exclude<SearchFilter, "all">): void {
-    setActiveFilter((current) =>
-      current === nextFilter ? "all" : nextFilter,
-    );
+    setActiveFilter((current) => (current === nextFilter ? "all" : nextFilter));
   }
 
   useEffect(() => {
@@ -251,7 +235,9 @@ export default function Search() {
                         )}
                         <div className="search-user-info">
                           <h4>{user.displayName}</h4>
-                          <p className="search-user-username">@{user.username}</p>
+                          <p className="search-user-username">
+                            @{user.username}
+                          </p>
                           {user.bio && (
                             <p className="search-user-bio">{user.bio}</p>
                           )}

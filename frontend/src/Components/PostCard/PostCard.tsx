@@ -1,30 +1,15 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { ApiComment, ApiPost } from "../../lib/api";
-import { ApiError, api } from "../../lib/api";
+import {
+  ApiError,
+  api,
+  resolveMediaUrl as resolveMediaSrc,
+} from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 import LoginPrompt from "../LoginPrompt/LoginPrompt";
 import ConfirmToast from "../ConfirmToast/ConfirmToast";
 import "./PostCard.css";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
-function resolveMediaSrc(mediaUrl: string | null): string | null {
-  if (!mediaUrl) {
-    return null;
-  }
-
-  if (
-    mediaUrl.startsWith("http://") ||
-    mediaUrl.startsWith("https://") ||
-    mediaUrl.startsWith("data:") ||
-    mediaUrl.startsWith("blob:")
-  ) {
-    return mediaUrl;
-  }
-
-  return `${API_BASE_URL}${mediaUrl.startsWith("/") ? mediaUrl : `/${mediaUrl}`}`;
-}
 
 function formatDate(isoDate: string): string {
   return new Date(isoDate).toLocaleString();

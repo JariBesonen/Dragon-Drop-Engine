@@ -7,33 +7,12 @@ import { useAuth } from "../../context/AuthContext";
 import {
   ApiError,
   api,
+  resolveMediaUrl as resolveBannerSrc,
   type ApiHive,
   type ApiHiveFollowRequest,
   type ApiPost,
 } from "../../lib/api";
 import "./HiveDetail.css";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
-function resolveBannerSrc(bannerImage: string | null): string | null {
-  if (!bannerImage) {
-    return null;
-  }
-
-  if (
-    bannerImage.startsWith("http://") ||
-    bannerImage.startsWith("https://") ||
-    bannerImage.startsWith("data:") ||
-    bannerImage.startsWith("blob:")
-  ) {
-    return bannerImage;
-  }
-
-  const normalizedPath = bannerImage.startsWith("/")
-    ? bannerImage
-    : `/${bannerImage}`;
-  return `${API_BASE_URL}${normalizedPath}`;
-}
 
 export default function HiveDetail() {
   const { id } = useParams();
