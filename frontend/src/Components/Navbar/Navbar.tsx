@@ -99,6 +99,18 @@ function Navbar() {
   }, [notificationsOpen]);
 
   useEffect(() => {
+    // once the dropdown closes, drop the unread highlight from any notification shown while it was open
+    if (notificationsOpen) {
+      return;
+    }
+    setNotifications((current) =>
+      current.every((notification) => notification.read)
+        ? current
+        : current.map((notification) => ({ ...notification, read: true })),
+    );
+  }, [notificationsOpen]);
+
+  useEffect(() => {
     const query = searchQuery.trim();
 
     if (!query) {
@@ -224,18 +236,13 @@ function Navbar() {
     try {
       setNotificationsLoading(true);
       const response = await api.getNotifications();
+      // keep the fetched read flags so unread items stay highlighted while the dropdown is open
       setNotifications(response.notifications);
       setUnreadCount(response.unreadCount);
 
       if (response.unreadCount > 0) {
         await api.markNotificationsRead();
         setUnreadCount(0);
-        setNotifications((current) =>
-          current.map((notification) => ({
-            ...notification,
-            read: true,
-          })),
-        );
       }
     } catch {
       setNotifications([]);
@@ -380,13 +387,14 @@ function Navbar() {
                     {notifications.map((notification) => (
                       <Link
                         key={notification.id}
-                        className="nav-search-result nav-notification-link"
+                        className={`nav-search-result nav-notification-link${
+                          notification.read ? "" : " nav-notification-link--unread"
+                        }`}
                         to={resolveNotificationTarget(notification)}
                         onClick={() => {
                           setNotificationsOpen(false);
                         }}
                       >
-                        <span className="nav-search-icon">•</span>
                         <span>
                           <strong>
                             {formatNotificationMessage(notification)}

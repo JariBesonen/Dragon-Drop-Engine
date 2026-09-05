@@ -284,6 +284,12 @@ a {
   text-decoration: none;
 }
 
+.nav-notification-link--unread {
+  background: var(--accent-border);
+  border-color: var(--accent);
+  border-left: 3px solid var(--accent);
+}
+
 .auth-controls {
   display: flex;
   align-items: center;
